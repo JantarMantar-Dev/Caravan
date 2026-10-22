@@ -10,10 +10,14 @@ import { HEX_R, HEX_A, hexToWorld, corners } from './hex.js';
 const hex3 = (h) => { const n = parseInt(h.slice(1), 16); return new THREE.Vector3(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255); };
 // Biome palettes sampled from the reference sheets: base, shadow band, light band, tuft ink, accent.
 export const BIOME_PAL = [
-  /* meadow */ ['#7cc83c', '#62b030', '#95d84e', '#3e8c28', '#ffffff'],
-  /* autumn */ ['#e9b52f', '#d89a22', '#f3c94a', '#b06a1a', '#e6731f'],
-  /* moor   */ ['#cdbf60', '#bbae52', '#dccf74', '#857f38', '#8e4fae'],
-  /* jungle */ ['#79c33d', '#5ca730', '#90d34e', '#36852a', '#2f7a2a'],
+  // Ground k-means of the reference wild tiles (tools/props.py, review loop 2):
+  // meadow #a4c82c, autumn #fac030 / #d99316, moor #c5a950 / #dfbc5f + heather
+  // #9e648b, jungle #a8c422 / #5b9c17. Bands sit close to base: the reference
+  // ground is near-flat colour with fine mottling, not big cel blotches.
+  /* meadow */ ['#a4c82c', '#9ac22a', '#acce36', '#6f9c22', '#ffffff'],
+  /* autumn */ ['#f8be30', '#f0b12a', '#fbc642', '#c47a14', '#e0601a'],
+  /* moor   */ ['#d2b157', '#cbab52', '#dab85d', '#8c7a3a', '#9e648b'],
+  /* jungle */ ['#a8c422', '#9fbc20', '#b0ca30', '#5b9c17', '#4f8f18'],
 ];
 
 const vert = /* glsl */`
@@ -125,7 +129,7 @@ float dots(vec2 p, float cell, float dens, float seed, out vec2 local) {
 
 vec3 groundColor(vec2 p, int b, float seed) {
   vec3 base = uPal[b * 5], dark = uPal[b * 5 + 1], light = uPal[b * 5 + 2], tcol = uPal[b * 5 + 3], acc = uPal[b * 5 + 4];
-  float n = fbm(p * 0.0062 + seed * 3.1);
+  float n = fbm(p * 0.011 + seed * 3.1);
   vec3 col = base;
   float nw = fwidth(n) * 0.7;
   col = mix(col, dark, 1.0 - smoothstep(0.37 - nw, 0.37 + nw, n));
@@ -189,7 +193,7 @@ void main() {
     // beach: sand band with a scalloped grass edge
     float sandW = 30.0 + (vnoise(p * 0.03) - 0.5) * 16.0;
     float sandMask = aaStep(-sandW, sd);
-    vec3 sand = vec3(0.925, 0.85, 0.64);
+    vec3 sand = vec3(0.96, 0.875, 0.635);   // ref #f5dfa2
     float speck; vec2 l; speck = dots(p, 9.0, 0.35, 5.0, l);
     sand = mix(sand, vec3(0.83, 0.74, 0.52), 1.0 - aaStep(1.0, speck));
     col = mix(col, uPal[biome * 5 + 1] * 0.92, inkBand(sd + sandW + 1.5, 1.6) * 0.8); // darker grass lip
@@ -197,7 +201,7 @@ void main() {
     col = mix(col, vec3(0.82, 0.74, 0.52), aaStep(-7.0, sd) * (1.0 - aaStep(0.0, sd)) * 0.6); // wet sand
     // water
     float wm = aaStep(0.0, sd);
-    vec3 deep = vec3(0.12, 0.62, 0.89), shallow = vec3(0.33, 0.77, 0.95);
+    vec3 deep = vec3(0.02, 0.72, 0.92), shallow = vec3(0.16, 0.80, 0.95); // ref #06c2ed
     vec3 wcol = mix(shallow, deep, smoothstep(10.0, 46.0, sd));
     // foam lines that breathe along the shore
     float t = uTime;
@@ -223,7 +227,7 @@ void main() {
     if (n == 2 && (i1 - i0) != 3) rd = sdBezier(lp, edgeMid(i0), vec2(0.0), edgeMid(i1));
     else for (int i = 0; i < 6; i++) if ((mask & (1 << i)) != 0) rd = min(rd, sdSeg(lp, vec2(0.0), edgeMid(i) * 1.02));
     rd += (vnoise(p * 0.045) - 0.5) * 3.0;
-    rd -= 21.0;
+    rd -= 27.0;                                   // ref roads ~55 units wide
   }
   int ptype = int(D1.a * 255.0 + 0.5);
   float pd = 1e5;
@@ -243,12 +247,15 @@ void main() {
   }
   float sd2 = (ptype == 1 || ptype == 3) ? smin(rd, pd, 24.0) : rd;
   if (sd2 < 40.0) {
-    vec3 road = ptype == 3 ? vec3(0.925, 0.85, 0.64) : vec3(0.94, 0.87, 0.68);
-    vec2 l; float pb = dots(p, 11.0, 0.22, 8.0, l);
-    road = mix(road, vec3(0.80, 0.71, 0.52), 1.0 - aaStep(1.1, pb));
+    // reference roads (wool_1 sample): cream #feedc2, a warm shaded band
+    // #fbd38a inside the edge, a soft olive lip instead of a hard ink line
+    vec3 road = vec3(0.996, 0.93, 0.76);
+    vec2 l; float pb = dots(p, 11.0, 0.18, 8.0, l);
+    road = mix(road, vec3(0.93, 0.83, 0.62), (1.0 - aaStep(1.1, pb)) * 0.7);
+    road = mix(road, vec3(0.984, 0.827, 0.54), aaStep(-6.0, sd2));
     col = mix(col, col * 0.86, (1.0 - aaStep(5.0, sd2)) * aaStep(0.0, sd2)); // grass shadow lip
     col = mix(col, road, 1.0 - aaStep(0.0, sd2));
-    col = mix(col, INK, inkBand(sd2, 1.0));
+    col = mix(col, vec3(0.50, 0.48, 0.20), inkBand(sd2, 1.0) * 0.75);
   }
 
   // --- hex outline ---

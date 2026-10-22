@@ -6,8 +6,9 @@ import { TerrainChunk } from './engine/terrain.js';
 import { SpriteLayer } from './engine/spriteLayer.js';
 import { TILES, composeTile, waterAt } from './tiles.js';
 import { rng } from './art/ink.js';
+import { dressFiller } from './filler.js';
 
-const FLORA = {
+export const FLORA = {
   meadow: ['tree0', 'pine0', 'tree1', 'tree2', 'pine1', 'tree3', 'shrub0', 'shrub1', 'flowerShrub0', 'pine2', 'shrub2', 'rock1'],
   autumn: ['autumnTree0', 'autumnShrub0', 'poplar0', 'autumnTree1', 'autumnShrub1', 'autumnShrub2', 'autumnTree2', 'rock2', 'autumnShrub3'],
   moor: ['heather0', 'heather1', 'heather2', 'tree0', 'heather3', 'rock1', 'heather0', 'pine0'],
@@ -17,7 +18,7 @@ const FLORA = {
 const key = (q, r) => `${q},${r}`;
 const dirBetween = (a, b) => DIRS.findIndex(([dq, dr]) => a[0] + dq === b[0] && a[1] + dr === b[1]);
 
-export function buildMapView(scene, atlas, tex, ox, oy) {
+export function buildMapView(scene, atlas, tex, ox, oy, ref) {
   const hexes = new Map();
   for (let r = -1; r <= 5; r++) {
     const qa = Math.ceil(-3.2 - r / 2), qb = Math.floor(3.2 - r / 2);
@@ -26,7 +27,7 @@ export function buildMapView(scene, atlas, tex, ox, oy) {
   const H = (q, r) => hexes.get(key(q, r));
 
   // towns (family, stage) and wild set pieces
-  const place = (q, r, fam, stage) => { const h = H(q, r); h.tile = TILES[fam][stage]; h.fam = fam; };
+  const place = (q, r, fam, stage) => { const h = H(q, r); h.tile = TILES[fam][stage]; h.fam = fam; h.ref = `${fam}_${stage}`; };
   place(0, 0, 'apple', 1); place(1, 1, 'wool', 2); place(0, 3, 'fish', 1);
   place(2, -1, 'spice', 0); place(2, 0, 'wool', 0); place(-1, -1, 'apple', 0);
 
@@ -71,25 +72,41 @@ export function buildMapView(scene, atlas, tex, ox, oy) {
   layer.mesh.position.set(ox, oy, 0);
   layer.mesh.renderOrder = 1;
   scene.add(layer.mesh);
+  // reference tiles (town / set-piece hexes): ground under all sprites, overhang over them
+  const refGround = new SpriteLayer(ref.atlas, ref.tex, 64), refOver = new SpriteLayer(ref.atlas, ref.tex, 512);
+  refGround.mesh.renderOrder = 0.5; refOver.mesh.renderOrder = 2;
+  for (const l of [refGround, refOver]) { l.mesh.position.set(ox, oy, 0); scene.add(l.mesh); }
   for (const h of hexes.values()) {
+    if (!h.ref) continue;
+    const [cx, cy] = hexToWorld(h.q, h.r);
+    refGround.add(h.ref + '_m', cx, cy, { clip: [1, 0] });
+    refOver.add(h.ref + '_m', cx, cy, { clip: [2, 0], z: -1e5 });
+  }
+  refGround.commit(); refOver.commit();
+  const refProps = new SpriteLayer(ref.atlas, ref.tex, 2048);
+  refProps.mesh.renderOrder = 1; refProps.mesh.position.set(ox, oy, 0); scene.add(refProps.mesh);
+
+  for (const h of hexes.values()) {
+    if (h.ref) continue;
     const [cx, cy] = hexToWorld(h.q, h.r);
     const water = { own: h.water };
     DIR_NAMES.forEach((nm, i) => { water[nm] = map.water(h.q + DIRS[i][0], h.r + DIRS[i][1]); });
     const roads = [...h.roads].map((i) => DIR_NAMES[i]);
-    let tile;
-    if (h.tile) tile = { ...h.tile, water, roads };
-    else {
+    const tile = { water, roads, sprites: [] };
+    if (h.water > 0.3) {
       const r = rng(h.q * 131 + h.r * 71 + 5);
-      tile = { water, roads, sprites: [], scatter: { names: FLORA[h.biome], n: h.biome === 'moor' ? 13 : 11, seed: 100 + h.q * 13 + h.r * 29, minDist: 34 } };
-      if (h.water > 0.3) for (let k = 0; k < 6; k++) {
+      for (let k = 0; k < 6; k++) {
         const x = (r() * 2 - 1) * 200, y = (r() * 2 - 1) * 220;
         if (waterAt(tile, x, y) > 0.62) tile.sprites.push([`waterRock${k % 3}`, x, y]);
         if (tile.sprites.length >= 2) break;
       }
+      for (const s of composeTile(tile)) layer.add(s.name, cx + s.x, cy - s.y);
     }
-    for (const s of composeTile(tile)) layer.add(s.name, cx + s.x, cy - s.y);
+    // land: props cut from the reference tiles, in the same y-sorted layer as the wagons
+    if (h.water < 0.95) for (const s of dressFiller(ref.props, h.biome, tile, 100 + h.q * 13 + h.r * 29)) refProps.add(s.name, cx + s.x, cy - s.y);
   }
-  const staticCount = layer.items.length;
+  layer.commit();
+  const staticCount = refProps.items.length;
 
   // ---- caravans: polyline along the exact road curves ----
   const pts = [];
@@ -114,18 +131,19 @@ export function buildMapView(scene, atlas, tex, ox, oy) {
     const t = (d - cum[lo]) / Math.max(1e-6, cum[hi] - cum[lo]);
     return [pts[lo].x + (pts[hi].x - pts[lo].x) * t, pts[lo].y + (pts[hi].y - pts[lo].y) * t];
   };
-  const goods = ['apple', 'wool', 'fish', 'apple', 'empty', 'wool'];
-  const wagons = goods.map((g, i) => ({ name: g === 'empty' ? 'wagon_empty' : `wagon_${g}`, d: (total * i) / goods.length, dir: i % 2 ? -1 : 1, speed: 120 + (i % 3) * 18, phase: i * 1.7 }));
+  const goods = ['apple', 'wool', 'fish', 'apple', 'spice', 'wool'];
+  // reference wagons at map scale (the reference map draws carts ~0.3 of a hex)
+  const wagons = goods.map((g, i) => ({ name: `${g}_wagon`, d: (total * i) / goods.length, dir: i % 2 ? -1 : 1, speed: 120 + (i % 3) * 18, phase: i * 1.7 }));
 
   return {
-    chunk, layer,
+    chunk, layer, refGround, refOver, refProps,
     bounds: (() => {
       let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
       for (const h of hexes.values()) { const [x, y] = hexToWorld(h.q, h.r); x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
       return { x: ox + (x0 + x1) / 2, y: oy + (y0 + y1) / 2 + HEX_R * 0.15, w: x1 - x0 + HEX_R * 2, h: y1 - y0 + HEX_R * 2.5 };
     })(),
     update(t, dt) {
-      layer.items.length = staticCount;
+      refProps.items.length = staticCount;
       for (const w of wagons) {
         w.d += w.dir * w.speed * dt;
         if (w.d > total - 60) { w.d = total - 60; w.dir = -1; }
@@ -134,11 +152,12 @@ export function buildMapView(scene, atlas, tex, ox, oy) {
         // extra hop when rolling through a hex edge / junction
         const near = Math.min(...edges.map((e) => Math.abs(e - w.d)));
         const bounce = 0.35 + 0.9 * Math.exp(-near / 26);
-        layer.add(w.name, x, y, { flip: x2 < x, bounce, phase: w.phase });
+        refProps.add(w.name, x, y + 6, { scale: 0.3, flip: x2 < x, bounce, phase: w.phase });
       }
-      layer.dirty = true;
+      refProps.dirty = true;
       chunk.update(t);
-      layer.update(t);
+      refProps.update(t);
+      refOver.update(t);
     },
   };
 }

@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { bakeAtlas } from './art/atlas.js';
 import { SPRITE_DEFS } from './art/sprites.js';
-import { HexMap, DIR_NAMES, HEX_R } from './engine/hex.js';
+import { HexMap, DIR_NAMES, HEX_R, hexToWorld } from './engine/hex.js';
 import { TerrainChunk } from './engine/terrain.js';
 import { SpriteLayer, atlasTexture } from './engine/spriteLayer.js';
-import { FAMILIES, TILES, composeTile } from './tiles.js';
+import { FAMILIES } from './tiles.js';
 import { buildMapView } from './mapview.js';
+import { dressFiller } from './filler.js';
+import { loadRefArt, clipFor } from './engine/refArt.js';
 
 const canvas = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
@@ -23,35 +25,83 @@ const bakeMs = performance.now() - tBake;
 const tex = atlasTexture(atlas, renderer);
 const sprites = new SpriteLayer(atlas, tex, 4096);
 
-// ---------- layout: 4 reference-style sheets in a 2x2 grid ----------
-const SHEET_W = 1640, SHEET_H = 1260, TILE_DX = 515;
+// ---------- layout ----------
+// Four goods sheets in the reference's own layout (1536 x 1024, 1 unit = 1 ref px,
+// assets at their source positions) so preview and reference compare 1:1, plus a
+// fifth sheet of the code-drawn filler hexes that join them on the map.
+const SHEET_W = 1536, SHEET_H = 1024, GAP = 140, TILE_DX = 515;
+const sheets = FAMILIES.map((fam, i) => ({ fam, x: (i % 2) * (SHEET_W + GAP), y: -Math.floor(i / 2) * (SHEET_H + GAP) }));
 const terrain = [];
-const sheets = [];
-FAMILIES.forEach((fam, i) => {
-  const sx = (i % 2) * SHEET_W, sy = -Math.floor(i / 2) * SHEET_H;
-  sheets.push({ fam, x: sx, y: sy });
-  TILES[fam.key].forEach((tile, stage) => {
-    const cx = sx + (stage - 1) * TILE_DX, cy = sy + 190;
-    // a 3x3 axial mini-map: the tile itself plus the neighbours its coast blends with
-    const map = new HexMap(-1, -1, 3, 3);
-    for (let r = -1; r <= 1; r++) for (let q = -1; q <= 1; q++) map.set(q, r, { biome: fam.biome, seed: 31 * (i * 3 + stage) + q * 7 + r * 13 });
-    const w = tile.water;
-    map.set(0, 0, { water: w ? w.own : 0, roads: tile.roads, plaza: tile.plaza });
-    if (w) DIR_NAMES.forEach((n, d) => { const D = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]][d]; map.set(D[0], D[1], { water: w[n] ?? 0 }); });
-    const chunk = new TerrainChunk(map, { focus: [0, 0] });
-    chunk.mesh.position.set(cx, cy, 0);
-    scene.add(chunk.mesh);
-    terrain.push(chunk);
-    for (const s of composeTile(tile)) sprites.add(s.name, cx + s.x, cy - s.y);
-  });
-  sprites.add(`icon_${fam.key}`, sx - 200, sy - 390);
-  sprites.add(`wagonBig_${fam.key}`, sx + 190, sy - 300);
+
+// filler sheet: the code-drawn hexes (one per biome, road and water case) at
+// the same size as the reference tiles, two rows of four
+const FILL_Y = -2 * (SHEET_H + GAP);
+const FILL_W = 4 * TILE_DX;
+const FILLER = [
+  { biome: 'meadow' }, { biome: 'autumn' }, { biome: 'moor' }, { biome: 'jungle' },
+  { biome: 'meadow', roads: [0, 3] }, { biome: 'autumn', roads: [1, 4] }, { biome: 'moor', roads: [0, 2, 4] }, { biome: 'meadow', water: 1 },
+];
+const fillerPos = (i) => [(SHEET_W * 2 + GAP - FILL_W) / 2 + (i % 4 + 0.5) * TILE_DX, FILL_Y - 330 - Math.floor(i / 4) * 640];
+FILLER.forEach((f, i) => {
+  const map = new HexMap(0, 0, 1, 1);
+  map.set(0, 0, { biome: f.biome, roads: f.roads ?? [], water: f.water ?? 0, seed: 17 + i * 31 });
+  const chunk = new TerrainChunk(map);
+  const [x, y] = fillerPos(i);
+  chunk.mesh.position.set(x, y, 0);
+  scene.add(chunk.mesh);
+  terrain.push(chunk);
+});
+// dressed once the reference props are loaded (see below)
+const dressFillerSheet = (layer, props) => FILLER.forEach((f, i) => {
+  if (f.water) return;
+  const [x, y] = fillerPos(i);
+  const tile = { water: null, roads: (f.roads ?? []).map((d) => DIR_NAMES[d]) };
+  for (const s of dressFiller(props, f.biome, tile, 100 + i * 13)) layer.add(s.name, x + s.x, y - s.y);
 });
 sprites.mesh.renderOrder = 1;
 scene.add(sprites.mesh);
 sprites.commit();
 
-const mapView = buildMapView(scene, atlas, tex, SHEET_W / 2, -SHEET_H * 2 - 1700);
+const MAP_OX = SHEET_W + GAP / 2, MAP_OY = FILL_Y - 1300 - 1700;
+let mapView = null;
+let ref = null;
+const refGround = [], refOver = [];
+
+// reference art: sheet tiles split into ground + overhang, icons and wagons at their source spots
+loadRefArt(renderer).then((r) => {
+  ref = r;
+  const ground = new SpriteLayer(r.atlas, r.tex, 512), over = new SpriteLayer(r.atlas, r.tex, 512);
+  ground.mesh.renderOrder = 0.5; over.mesh.renderOrder = 2;
+  scene.add(ground.mesh, over.mesh);
+  refGround.push(ground); refOver.push(over);
+  for (const s of sheets) {
+    for (let st = 0; st < 3; st++) {
+      const name = `${s.fam.key}_${st}`, t = r.manifest.tiles[name];
+      const v = t.src.verts, cx = v.reduce((a, p) => a + p[0], 0) / 6, cy = v.reduce((a, p) => a + p[1], 0) / 6;
+      const rad = v.reduce((a, p) => a + Math.hypot(p[0] - cx, p[1] - cy), 0) / 6;
+      const sc = rad / (HEX_R + t.ink / 2 / Math.cos(Math.PI / 6));
+      const c = clipFor(name, 'sheet');
+      ground.add(name, s.x + cx, s.y - cy, { scale: sc, clip: c.ground });
+      over.add(name, s.x + cx, s.y - cy, { scale: sc, clip: c.over, z: -1e5 });
+    }
+    for (const kind of ['icon', 'wagon']) {
+      const name = `${s.fam.key}_${kind}`, it = r.manifest.items[name];
+      over.add(name, s.x + it.src.x - 2 + it.ax, s.y - (it.src.y - 2 + it.ay));
+    }
+  }
+  const props = new SpriteLayer(r.atlas, r.tex, 512);
+  props.mesh.renderOrder = 1;
+  scene.add(props.mesh);
+  dressFillerSheet(props, r.props);
+  refGround.push(props);
+  ground.commit(); over.commit(); props.commit();
+  mapView = buildMapView(scene, atlas, tex, MAP_OX, MAP_OY, r);
+  refGround.push(mapView.refGround); refOver.push(mapView.refOver);
+  if (params.has('map')) { focusMap(); Object.assign(view, target); }
+  if (params.has('noterrain')) mapView.chunk.mesh.visible = false;
+  if (params.has('nosprites')) mapView.layer.mesh.visible = false;
+  window.__ready = true;
+});
 
 // ---------- camera: pan / zoom / focus ----------
 const view = { x: SHEET_W / 2, y: -SHEET_H / 2, h: SHEET_H * 2.1 };
@@ -113,25 +163,29 @@ canvas.addEventListener('wheel', (e) => {
 
 // tabs
 const tabs = document.getElementById('tabs');
-const focusAll = () => fitTo(SHEET_W / 2, -SHEET_H / 2 + 70, SHEET_W * 2 - 80, SHEET_H + 1120);
+const ALL_W = SHEET_W * 2 + GAP, ALL_H = -FILL_Y + 1300;
+const focusAll = () => fitTo(ALL_W / 2, -ALL_H / 2 + 20, ALL_W, ALL_H);
 const mkTab = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = () => { [...tabs.children].forEach((c) => c.classList.remove('on')); b.classList.add('on'); fn(); }; tabs.appendChild(b); return b; };
 mkTab('All sets', focusAll).classList.add('on');
-sheets.forEach((s) => mkTab(s.fam.good, () => fitTo(s.x, s.y + 70, SHEET_W - 80, 1120)));
-const focusMap = () => { const b = mapView.bounds; fitTo(b.x, b.y, b.w, b.h); };
+const focusSheet = (s) => fitTo(s.x + SHEET_W / 2, s.y - SHEET_H / 2, SHEET_W, SHEET_H);
+sheets.forEach((s) => mkTab(s.fam.good, () => focusSheet(s)));
+mkTab('Filler', () => fitTo(ALL_W / 2, FILL_Y - 650, FILL_W + 100, 1300));
+const focusMap = () => { if (!mapView) return; const b = mapView.bounds; fitTo(b.x, b.y, b.w, b.h); };
 mkTab('Map + caravans', focusMap);
 
 // ---------- stats ----------
 const stats = document.getElementById('stats');
 let frames = 0, acc = 0, last = performance.now(), cpuAcc = 0, jsAcc = 0;
 const params = new URLSearchParams(location.search);
-if (params.has('map')) { focusMap(); Object.assign(view, target); }
-else if (params.has('set')) { const s = sheets[+params.get('set')]; fitTo(s.x, s.y + 70, SHEET_W - 80, 1120); Object.assign(view, target); }
+if (params.has('set')) { focusSheet(sheets[+params.get('set')]); Object.assign(view, target); }
+// ?review=i : the sheet at exactly 1 css px per unit, top-left at the viewport origin
+if (params.has("review")) { const s = sheets[+params.get("review")]; Object.assign(view, { x: s.x + SHEET_W / 2, y: s.y - SHEET_H / 2, h: SHEET_H }); target = { ...view }; document.body.classList.add("review"); }
 else { focusAll(); Object.assign(view, target); }
 if (params.has('zoom')) { const [x, y, h] = params.get('zoom').split(',').map(Number); Object.assign(view, { x, y, h }); target = { ...view }; }
 
 // perf A/B switches: ?noterrain / ?nosprites
-if (params.has('noterrain')) { terrain.forEach((c) => (c.mesh.visible = false)); mapView.chunk.mesh.visible = false; }
-if (params.has('nosprites')) { sprites.mesh.visible = false; mapView.layer.mesh.visible = false; }
+if (params.has('noterrain')) terrain.forEach((c) => (c.mesh.visible = false));
+if (params.has('nosprites')) sprites.mesh.visible = false;
 
 resize();
 function frame(now) {
@@ -143,15 +197,18 @@ function frame(now) {
   const t = now / 1000;
   terrain.forEach((c) => c.update(t));
   sprites.update(t);
-  mapView.update(t, dt);
+  for (const l of refGround) l.update(t);
+  for (const l of refOver) l.update(t);
+  if (mapView) mapView.update(t, dt);
   jsAcc += performance.now() - t0;
   renderer.render(scene, camera);
   cpuAcc += performance.now() - t0;
   frames++; acc += dt;
   if (acc > 0.5) {
     const info = renderer.info.render;
-    stats.textContent = `${Math.round(frames / acc)} fps · js ${(jsAcc / frames).toFixed(2)} ms · cpu+submit ${(cpuAcc / frames).toFixed(2)} ms · ${info.calls} draw calls · ${sprites.geometry.instanceCount + mapView.layer.geometry.instanceCount} sprites · atlas ${atlas.width}×${atlas.height} baked in ${bakeMs.toFixed(0)} ms`;
-    window.__info = { fps: frames / acc, js: jsAcc / frames, cpu: cpuAcc / frames, calls: info.calls, sprites: sprites.geometry.instanceCount + mapView.layer.geometry.instanceCount, bakeMs, atlas: [atlas.width, atlas.height] };
+    const nSpr = sprites.geometry.instanceCount + (mapView ? mapView.layer.geometry.instanceCount : 0) + [...refGround, ...refOver].reduce((a, l) => a + l.geometry.instanceCount, 0);
+    stats.textContent = `${Math.round(frames / acc)} fps · js ${(jsAcc / frames).toFixed(2)} ms · cpu+submit ${(cpuAcc / frames).toFixed(2)} ms · ${info.calls} draw calls · ${nSpr} sprites · code atlas ${atlas.width}×${atlas.height} in ${bakeMs.toFixed(0)} ms` + (ref ? ` · ref atlas ${ref.atlas.width}×${ref.atlas.height}` : '');
+    window.__info = { fps: frames / acc, js: jsAcc / frames, cpu: cpuAcc / frames, calls: info.calls, sprites: nSpr, bakeMs, atlas: [atlas.width, atlas.height], ready: !!window.__ready };
     frames = 0; acc = 0; cpuAcc = 0; jsAcc = 0;
   }
   requestAnimationFrame(frame);
