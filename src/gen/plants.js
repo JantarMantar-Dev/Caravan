@@ -2,12 +2,12 @@
 // back to front, each with its own shadow side, lit side and highlight, inside
 // one ink outline. Nothing is cut from the reference, so no tree is missing
 // the part another tree hid.
-import { INK, IW, IW2, rng, f, circle, ellipse, path, smooth, mix, id, bboxOf } from './util.js';
+import { INK, IW, IW2, rng, f, circle, ellipse, path, smooth, mix, id, bboxOf, rgrad, lgrad, scallop } from './util.js';
 
 export const LEAF = {
-  ink: '#173a14', dark: '#1d6a2a', mid: '#3f9a2e', light: '#77bd31', hi: '#b5dc4c',
+  ink: '#133312', deep: '#0e4a22', dark: '#1a612a', mid: '#348f2c', light: '#6db52b', hi: '#b2da45',
 };
-export const PINE = { ink: '#123b22', dark: '#0f5a34', mid: '#2a8a3c', light: '#52ad42', hi: '#8fd05a' };
+export const PINE = { ink: '#0f3320', deep: '#0a4429', dark: '#0f5a34', mid: '#25843a', light: '#4fa83f', hi: '#93d05a' };
 const BARK = { base: '#a8703c', dark: '#6e4423', light: '#c89058' };
 const SHADOW = 'rgba(22,48,6,0.26)';
 
@@ -19,46 +19,51 @@ function lobes(R, cx, cy, r, n) {
     const a = -Math.PI / 2 + ((i + R.range(-0.25, 0.25)) / n) * Math.PI * 2;
     const s = Math.sin(a);
     const d = r * R.range(0.42, 0.52);
-    const rr = r * R.range(0.4, 0.5) * (s > 0.3 ? 0.85 : 1);
+    const rr = r * R.range(0.46, 0.56) * (s > 0.3 ? 0.82 : 1);
     L.push([cx + Math.cos(a) * d * 1.05, cy + s * d * (s > 0 ? 0.62 : 0.85), rr]);
   }
   // a front row of small lobes gives the crown its lower scallops
-  for (let i = 0; i < 2; i++) L.push([cx + r * (i ? 0.22 : -0.26) + R.range(-3, 3), cy + r * 0.36, r * R.range(0.3, 0.36)]);
+  L.push([cx + r * R.range(-0.12, 0.12), cy + r * 0.38, r * R.range(0.4, 0.46)]);
   return L.sort((a, b) => a[1] - b[1]);
 }
 
 function crown(R, L, pal, cx, cy, r) {
   const out = [];
   const clip = id('cr');
-  // ink: every lobe grown by the ink width, so the outline is their union
-  out.push(`<g fill="${pal.ink}">${L.map(([x, y, q]) => circle([x, y], q + IW)).join('')}</g>`);
-  out.push(`<clipPath id="${clip}">${L.map(([x, y, q]) => circle([x, y], q)).join('')}</clipPath>`);
+  // each lobe gets a leafy scalloped edge; the union of them is the crown
+  const shapes = L.map(([x, y, q]) => scallop(x, y, q, R, Math.max(6, Math.round(q * 0.8)), 0.2));
+  out.push(`<g fill="${pal.ink}" stroke="${pal.ink}" stroke-width="${f(IW * 2)}" stroke-linejoin="round">${shapes.map((d) => `<path d="${d}"/>`).join('')}</g>`);
+  out.push(`<clipPath id="${clip}">${shapes.map((d) => `<path d="${d}"/>`).join('')}</clipPath>`);
   out.push(`<g clip-path="url(#${clip})">`);
+  out.push(circle([cx, cy], r * 2, pal.dark));
   L.forEach(([x, y, q], i) => {
+    const d = shapes[i];
+    // the lobe in front darkens the leaves behind it (ambient occlusion)
+    if (i > 0) out.push(`<path d="${d}" fill="${mix(pal.dark, '#06200c', 0.45)}" opacity="0.55" transform="translate(${f(q * 0.12)} ${f(q * 0.16)})"/>`);
+    const [gd, gf] = rgrad([[0, pal.hi], [0.22, pal.light], [0.5, pal.mid], [0.8, pal.dark], [1, pal.deep]], 0.3, 0.22, 0.95);
+    out.push(gd + `<path d="${d}" fill="${gf}"/>`);
     const c = id('lb');
-    const top = y < cy + r * 0.15;
-    out.push(`<clipPath id="${c}">${circle([x, y], q)}</clipPath><g clip-path="url(#${c})">`);
-    out.push(circle([x, y], q, pal.dark));
-    out.push(circle([x - q * 0.16, y - q * 0.2], q * 0.9, pal.mid));
-    out.push(circle([x - q * 0.34, y - q * 0.42], q * 0.58, pal.light));
-    // leaf flecks on the lit side
-    for (let k = 0; k < 3; k++) {
-      const a = R.range(Math.PI * 1.05, Math.PI * 1.6), d = q * R.range(0.25, 0.7);
-      out.push(ellipse([x + Math.cos(a) * d, y + Math.sin(a) * d], q * 0.12, q * 0.07, pal.hi, `transform="rotate(${f(R.range(-40, 10))} ${f(x + Math.cos(a) * d)} ${f(y + Math.sin(a) * d)})"`));
+    out.push(`<clipPath id="${c}"><path d="${d}"/></clipPath><g clip-path="url(#${c})">`);
+    // leaf clumps: small scalloped arcs in the shade, leaf dabs in the light
+    for (let k = 0; k < 2 + Math.round(q / 9); k++) {
+      const a = R.range(0.1, Math.PI * 0.85), dd = q * R.range(0.35, 0.75);
+      const px = x + Math.cos(a) * dd, py = y + Math.sin(a) * dd * 0.9, s = q * R.range(0.2, 0.3);
+      out.push(`<path d="M${f(px - s)},${f(py - s * 0.2)}q${f(s * 0.5)},${f(s * 0.9)} ${f(s)},${f(s * 0.1)}q${f(s * 0.5)},${f(s * 0.8)} ${f(s)},${f(-s * 0.1)}" fill="none" stroke="${pal.ink}" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>`);
     }
-    // dark leaf tufts low on the shadow side
-    for (let k = 0; k < 2; k++) {
-      const a = R.range(0.1, 1.2), d = q * R.range(0.55, 0.85);
-      out.push(ellipse([x + Math.cos(a) * d, y + Math.sin(a) * d], q * 0.16, q * 0.08, mix(pal.dark, '#000', 0.25), `transform="rotate(${f(a * 57 - 70)} ${f(x + Math.cos(a) * d)} ${f(y + Math.sin(a) * d)})"`));
+    // the lit top of the clump: a lighter leafy patch up and to the left
+    out.push(`<path d="${scallop(x - q * 0.22, y - q * 0.3, q * 0.5, R, 6, 0.25)}" fill="${pal.light}" opacity="0.85"/>`);
+    out.push(`<path d="${scallop(x - q * 0.32, y - q * 0.42, q * 0.26, R, 5, 0.3)}" fill="${pal.hi}" opacity="0.9"/>`);
+    for (let k = 0; k < 2 + Math.round(q / 9); k++) {
+      const a = R.range(Math.PI * 1.0, Math.PI * 1.75), dd = q * R.range(0.15, 0.75);
+      const px = x + Math.cos(a) * dd, py = y + Math.sin(a) * dd;
+      const col = R() < 0.35 ? '#e4f07a' : pal.hi;
+      out.push(ellipse([px, py], q * R.range(0.07, 0.12), q * 0.045, col, `transform="rotate(${f(R.range(-50, 20))} ${f(px)} ${f(py)})" opacity="0.9"`));
     }
     out.push('</g>');
-    // seam: the lobe's upper rim where it sits in front of the lobes behind
-    if (i > 0 && !top) {
-      const a0 = Math.PI * R.range(1.05, 1.2), a1 = Math.PI * R.range(1.75, 1.92);
-      const p0 = [x + Math.cos(a0) * q, y + Math.sin(a0) * q], p1 = [x + Math.cos(a1) * q, y + Math.sin(a1) * q];
-      out.push(`<path d="M${f(p0[0])},${f(p0[1])}A${f(q)},${f(q)} 0 0 1 ${f(p1[0])},${f(p1[1])}" fill="none" stroke="${pal.ink}" stroke-width="${f(IW2)}" stroke-linecap="round"/>`);
-    }
   });
+  // the underside of the crown sits in its own shadow
+  const [ud, uf] = lgrad([[0, pal.deep, 0], [0.55, pal.deep, 0.15], [1, '#062b12', 0.75]], 0, 0, 0, 1);
+  out.push(ud + `<rect x="${f(cx - r * 1.3)}" y="${f(cy + r * 0.1)}" width="${f(r * 2.6)}" height="${f(r)}" fill="${uf}"/>`);
   out.push('</g>');
   return out.join('');
 }
@@ -84,11 +89,13 @@ function trunk(R, x, y, top, w0, w1) {
 // round leafy tree. foot: where the trunk meets the ground; r: crown radius
 export function tree({ x, y, r = 30, h, seed = 1, pal = LEAF }) {
   const R = rng(seed);
-  h = h ?? r * 1.3;
+  h = h ?? r * 1.36;
   const cx = x + R.range(-0.06, 0.06) * r, cy = y - h;
-  const L = lobes(R, cx, cy, r, 5 + Math.floor(R() * 2));
+  const L = lobes(R, cx, cy, r, 4 + Math.floor(R() * 2));
   const svg = ellipse([x + r * 0.3, y - r * 0.08], r * 0.85, r * 0.3, SHADOW) +
-    trunk(R, x, y, cy + r * 0.2, r * 0.25, r * 0.17) +
+    trunk(R, x, y, cy + r * 0.2, r * 0.32, r * 0.2) +
+    `<path d="M${f(x)},${f(cy + r * 0.45)}q${f(-r * 0.1)},${f(-r * 0.2)} ${f(-r * 0.3)},${f(-r * 0.35)}M${f(x + r * 0.03)},${f(cy + r * 0.5)}q${f(r * 0.12)},${f(-r * 0.2)} ${f(r * 0.32)},${f(-r * 0.3)}" stroke="${INK}" stroke-width="${f(r * 0.12 + 1.6)}" stroke-linecap="round" fill="none"/>` +
+    `<path d="M${f(x)},${f(cy + r * 0.45)}q${f(-r * 0.1)},${f(-r * 0.2)} ${f(-r * 0.3)},${f(-r * 0.35)}M${f(x + r * 0.03)},${f(cy + r * 0.5)}q${f(r * 0.12)},${f(-r * 0.2)} ${f(r * 0.32)},${f(-r * 0.3)}" stroke="#9a6534" stroke-width="${f(r * 0.12)}" stroke-linecap="round" fill="none"/>` +
     crown(R, L, pal, cx, cy, r);
   const ext = L.flatMap(([a, b, q]) => [[a - q - IW, b - q - IW], [a + q + IW, b + q + IW]]);
   return { svg, box: bboxOf([...ext, [x - r, y + r * 0.4], [x + r * 1.2, y]]), foot: [x, y] };
@@ -111,61 +118,56 @@ export function bush({ x, y, r = 12, seed = 1, pal = LEAF }) {
   return { svg, box: bboxOf([...ext, [x - r * 0.9, y + r * 0.4], [x + r * 1.3, y]]), foot: [x, y] };
 }
 
-// conifer: stacked scalloped tiers, each with a lit left side
+// conifer: stacked tiers with lumpy, needled edges; each tier lit on its left
 export function pine({ x, y, w = 50, h = 84, tiers = 4, seed = 1, pal = PINE }) {
   const R = rng(seed);
   const th = h * 0.13;                       // trunk showing below the lowest tier
   const top = y - h, base = y - th;
-  const out = [ellipse([x + w * 0.18, y - 0.5], w * 0.5, w * 0.17, SHADOW)];
+  const out = [ellipse([x + w * 0.2, y - 0.5], w * 0.5, w * 0.17, SHADOW)];
   out.push(trunk(R, x, y, base - 4, w * 0.11, w * 0.085));
   const all = [];
+  const side = (from, to, bumps, dir) => {
+    // lumpy edge from `from` to `to`, bulging outwards (dir -1 left, +1 right)
+    let d = '';
+    for (let k = 1; k <= bumps; k++) {
+      const a = [from[0] + (to[0] - from[0]) * ((k - 1) / bumps), from[1] + (to[1] - from[1]) * ((k - 1) / bumps)];
+      const b = [from[0] + (to[0] - from[0]) * (k / bumps), from[1] + (to[1] - from[1]) * (k / bumps)];
+      const m = [(a[0] + b[0]) / 2 + dir * R.range(1.2, 2.4), (a[1] + b[1]) / 2 + R.range(0.5, 1.5)];
+      d += `Q${f(m[0])},${f(m[1])} ${f(b[0])},${f(b[1])}`;
+    }
+    return d;
+  };
   for (let i = 0; i < tiers; i++) {
     const t0 = i / tiers;
-    const by = base - (base - top) * t0 * 0.86;             // tier bottom
-    const ty = top + (i < tiers - 1 ? (base - top) * 0.02 * i : 0);   // apex
-    const apexY = i === tiers - 1 ? top : by - (base - top) * 0.42;
-    const hw = (w / 2) * (1 - t0 * 0.62) * R.range(0.95, 1.05);
-    const lean = R.range(-1, 1);
-    const ax = x + lean, ay = Math.max(top, apexY);
-    void ty;
-    // outline: apex, left side with a jag, scalloped bottom, right side
-    const pts = [[ax, ay]];
-    const jag = (s) => [ax + s * hw * 0.55, ay + (by - ay) * 0.52, ax + s * hw * 0.42, ay + (by - ay) * 0.56];
-    const jl = jag(-1), jr = jag(1);
-    pts.push([jl[0], jl[1]], [jl[2], jl[3]]);
-    const n = 3 + (hw > 16 ? 1 : 0);
-    const bl = [ax - hw, by - 1.5];
-    pts.push(bl);
-    for (let k = 1; k < n; k++) pts.push([ax - hw + (2 * hw * k) / n, by + R.range(-1.8, -0.4)]);
-    pts.push([ax + hw, by - 1.5]);
-    pts.push([jr[2], jr[3]], [jr[0], jr[1]]);
-    // build a path with scallop arcs along the bottom edge
-    let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
-    d += `L${f(pts[1][0])},${f(pts[1][1])}L${f(pts[2][0])},${f(pts[2][1])}L${f(bl[0])},${f(bl[1])}`;
+    const by = base - (base - top) * t0 * 0.84;
+    const ay = i === tiers - 1 ? top : by - (base - top) * 0.44;
+    const hw = (w / 2) * (1 - t0 * 0.6) * R.range(0.95, 1.05);
+    const ax = x + R.range(-0.8, 0.8);
+    const n = Math.max(3, Math.round(hw / 4.5));
+    const L = [ax - hw, by - 1], Rt = [ax + hw, by - 1];
+    let d = `M${f(ax)},${f(ay)}` + side([ax, ay], L, Math.max(2, Math.round((by - ay) / 9)), -1);
     for (let k = 1; k <= n; k++) {
-      const px = ax - hw + (2 * hw * k) / n, py = k === n ? by - 1.5 : pts[3 + k][1];
-      const sag = (2 * hw) / n * 0.32;
-      d += `Q${f(px - hw / n)},${f(by + sag)} ${f(px)},${f(py)}`;
+      const px = ax - hw + (2 * hw * k) / n;
+      d += `Q${f(px - hw / n)},${f(by + (2 * hw / n) * R.range(0.38, 0.55))} ${f(px)},${f(by - 1 + R.range(-0.6, 0.6))}`;
     }
-    d += `L${f(jr[2])},${f(jr[3])}L${f(jr[0])},${f(jr[1])}Z`;
-    all.push([ax - hw - IW, ay - IW], [ax + hw + IW, by + 4]);
+    d += side(Rt, [ax, ay], Math.max(2, Math.round((by - ay) / 9)), 1) + 'Z';
+    all.push([ax - hw - IW - 3, ay - IW], [ax + hw + IW + 3, by + 6]);
     const clip = id('pn');
     out.push(`<clipPath id="${clip}"><path d="${d}"/></clipPath>`);
-    out.push(path(d, pal.dark, `stroke="${pal.ink}" stroke-width="${f(IW * 2)}" stroke-linejoin="round"`));
-    out.push(path(d, pal.dark));
+    out.push(path(d, pal.ink, `stroke="${pal.ink}" stroke-width="${f(IW * 2)}" stroke-linejoin="round"`));
+    const [gd, gf] = lgrad([[0, pal.light], [0.42, pal.mid], [0.62, pal.dark], [1, pal.deep]], 0, 0, 1, 0.25);
+    out.push(gd + path(d, gf));
     out.push(`<g clip-path="url(#${clip})">`);
-    out.push(path(`M${f(ax)},${f(ay - 2)}L${f(ax - hw * 1.3)},${f(by + 6)}L${f(ax + hw * 0.15)},${f(by + 6)}Z`, pal.mid));
-    out.push(path(`M${f(ax - 1)},${f(ay + 2)}L${f(ax - hw * 0.9)},${f(by + 2)}L${f(ax - hw * 0.35)},${f(by + 2)}Z`, pal.light));
-    for (let k = 0; k < 3; k++) {
-      const px = ax - hw * R.range(0.1, 0.6), py = ay + (by - ay) * R.range(0.35, 0.85);
-      out.push(ellipse([px, py], hw * 0.1, 1.1, pal.hi, `transform="rotate(${f(R.range(30, 50))} ${f(px)} ${f(py)})"`));
-    }
-    // needle strokes on the shadow side
-    for (let k = 0; k < 3; k++) {
-      const px = ax + hw * R.range(0.2, 0.7), py = ay + (by - ay) * R.range(0.5, 0.95);
-      out.push(`<path d="M${f(px)},${f(py)}l${f(hw * 0.12)},${f(-3)}" stroke="${pal.ink}" stroke-width="${f(IW2)}" stroke-linecap="round" fill="none" opacity="0.7"/>`);
+    // the tier above shades this one's top
+    if (i < tiers - 1) out.push(ellipse([ax + hw * 0.1, ay + 2], hw * 0.75, (by - ay) * 0.28, pal.deep, 'opacity="0.55"'));
+    // needle tufts: light strokes on the lit side, dark ones in the shade
+    for (let k = 0; k < 4 + Math.round(hw / 5); k++) {
+      const u = R.range(-0.85, 0.85), v = R.range(0.35, 0.95);
+      const px = ax + u * hw * v, py = ay + (by - ay) * v;
+      const lit = u < -0.1;
+      out.push(`<path d="M${f(px)},${f(py)}q${f(lit ? -1.5 : 1.5)},${f(1.2)} ${f(lit ? -3.2 : 3.2)},${f(1.6)}" stroke="${lit ? pal.hi : pal.ink}" stroke-width="${lit ? 1.1 : 0.85}" fill="none" stroke-linecap="round" opacity="${lit ? 0.85 : 0.5}"/>`);
     }
     out.push('</g>');
   }
-  return { svg: out.join(''), box: bboxOf([...all, [x - w / 2, y + 4], [x + w * 0.7, y]]), foot: [x, y] };
+  return { svg: out.join(''), box: bboxOf([...all, [x - w / 2, y + 4], [x + w * 0.75, y]]), foot: [x, y] };
 }

@@ -112,3 +112,42 @@ export function inPoly(rings, x, y) {
       if ((r[i][1] > y) !== (r[j][1] > y) && x < ((r[j][0] - r[i][0]) * (y - r[i][1])) / (r[j][1] - r[i][1]) + r[i][0]) c = !c;
   return c;
 }
+
+// ---- painterly helpers -------------------------------------------------
+// gradients return [defs, fill]; place defs before the shape that uses them
+export function lgrad(stops, x1 = 0, y1 = 0, x2 = 0, y2 = 1, units = 'objectBoundingBox') {
+  const g = id('lg');
+  return [`<linearGradient id="${g}" gradientUnits="${units}" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}">${stops.map(([o, c, a = 1]) => `<stop offset="${f(o)}" stop-color="${c}"${a < 1 ? ` stop-opacity="${f(a)}"` : ''}/>`).join('')}</linearGradient>`, `url(#${g})`];
+}
+export function rgrad(stops, cx = 0.35, cy = 0.3, r = 0.8, units = 'objectBoundingBox') {
+  const g = id('rg');
+  return [`<radialGradient id="${g}" gradientUnits="${units}" cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}">${stops.map(([o, c, a = 1]) => `<stop offset="${f(o)}" stop-color="${c}"${a < 1 ? ` stop-opacity="${f(a)}"` : ''}/>`).join('')}</radialGradient>`, `url(#${g})`];
+}
+// a circle with a leafy, scalloped edge
+export function scallop(cx, cy, r, R, n, amp = 0.13) {
+  n = n ?? Math.max(5, Math.round(r * 0.5 + 4));
+  const a0 = R ? R() * Math.PI * 2 : 0;
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = a0 + (i / n) * Math.PI * 2;
+    pts.push([cx + Math.cos(a) * r * (1 - amp * 0.5), cy + Math.sin(a) * r * (1 - amp * 0.5)]);
+  }
+  let d = `M${P(pts[0])}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[i], p1 = pts[(i + 1) % n];
+    const am = a0 + ((i + 0.5) / n) * Math.PI * 2;
+    const k = r * (1 + amp * (R ? R.range(0.7, 1.3) : 1));
+    d += `Q${f(cx + Math.cos(am) * k)},${f(cy + Math.sin(am) * k)} ${P(p1)}`;
+  }
+  return d + 'Z';
+}
+// short parallel hatch strokes inside a clip: the comic-book shading the reference uses
+export function hatch(x0, y0, x1, y1, step, len, ang, col, w = 0.7, op = 0.5, R) {
+  let d = '';
+  const dx = Math.cos(ang) * len, dy = Math.sin(ang) * len;
+  for (let y = y0; y < y1; y += step) for (let x = x0 + ((y / step) % 2) * step * 0.5; x < x1; x += step) {
+    const j = R ? R.range(-0.3, 0.3) * step : 0;
+    d += `M${f(x + j)},${f(y)}l${f(dx)},${f(dy)}`;
+  }
+  return `<path d="${d}" stroke="${col}" stroke-width="${f(w)}" stroke-linecap="round" fill="none" opacity="${f(op)}"/>`;
+}

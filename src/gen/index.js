@@ -4,7 +4,7 @@
 // (or an exporter) can rasterise it at any resolution.
 import { tree, pine, bush } from './plants.js';
 import { rock } from './rocks.js';
-import { dock, house, crate, barrel, stall, fence, rack, flowers } from './built.js';
+import { dock, house, crate, barrel, stall, fence, rack, flowers, DEFS } from './built.js';
 import { sand, grass, road, frame } from './ground.js';
 import { bboxOf } from './util.js';
 
@@ -36,4 +36,5 @@ export function renderScene(scene) {
 }
 
 export const wrap = (inner, box, scale = 1) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.join(' ')}" width="${Math.ceil(box[2] * scale)}" height="${Math.ceil(box[3] * scale)}">${inner}</svg>`;
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box.join(' ')}" width="${Math.ceil(box[2] * scale)}" height="${Math.ceil(box[3] * scale)}"><defs>${DEFS}</defs>${inner}</svg>`;
+export { DEFS };

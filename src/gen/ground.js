@@ -47,6 +47,9 @@ export function sand({ rings, seed = 21, pal = GROUND }) {
   s += scatter(R, rings, 1 / 900, (x, y) => `<path d="${blob(R, x, y, R.range(6, 14))}" fill="${pal.sandLight}" opacity="0.7"/>`);
   s += scatter(R, rings, 1 / 70, (x, y) => circle([x, y], R.range(0.45, 0.85), pal.sandDot));
   s += scatter(R, rings, 1 / 2600, (x, y) => ellipse([x, y], R.range(1.4, 2.4), R.range(0.9, 1.3), mix('#b9b0a4', '#ffffff', R() * 0.3), `stroke="${INK}" stroke-width="0.5"`));
+  // wind ripples and the odd shell
+  s += scatter(R, rings, 1 / 450, (x, y) => `<path d="M${f(x - 4)},${f(y)}q${f(4)},${f(-1.6)} ${f(8)},0" stroke="${pal.sandDot}" stroke-width="0.7" fill="none" opacity="0.7"/>`);
+  s += scatter(R, rings, 1 / 6000, (x, y) => `<path d="M${f(x - 1.8)},${f(y)}a1.8,1.6 0 0 1 3.6,0Z" fill="#fbe9e0" stroke="#b08a70" stroke-width="0.5"/>`);
   s += '</g>';
   return s;
 }
@@ -60,15 +63,43 @@ export function grass({ rings, seed = 22, pal = GROUND }) {
   s += `<g clip-path="url(#${c})">`;
   // darker inner rim along the edge, then light patches
   s += `<path d="${d}" fill="none" stroke="${pal.grassDark}" stroke-width="4" opacity="0.45"/>`;
+  // big soft tonal regions first, then the small light patches
+  s += scatter(R, rings, 1 / 5200, (x, y) => `<path d="${blob(R, x, y, R.range(26, 46))}" fill="${R() < 0.5 ? pal.grassLight : pal.grassDark}" opacity="0.28"/>`);
   s += scatter(R, rings, 1 / 1500, (x, y) => `<path d="${blob(R, x, y, R.range(8, 20))}" fill="${pal.grassLight}"/>`);
   s += scatter(R, rings, 1 / 2600, (x, y) => `<path d="${blob(R, x, y, R.range(6, 13))}" fill="${pal.grassDark}" opacity="0.55"/>`);
   // tufts: little V strokes, dark with a light blade beside
-  s += scatter(R, rings, 1 / 160, (x, y) => {
-    const h = R.range(2.2, 3.6);
-    return `<path d="M${f(x - 1.6)},${f(y - h)}L${f(x)},${f(y)}L${f(x + 0.4)},${f(y - h * 1.2)}M${f(x)},${f(y)}L${f(x + 2)},${f(y - h * 0.8)}" stroke="${R() < 0.75 ? pal.grassDark : '#cbe668'}" stroke-width="0.85" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += scatter(R, rings, 1 / 120, (x, y) => {
+    const h = R.range(2.2, 4.2), c = R() < 0.7 ? pal.grassDark : '#cbe668';
+    return `<path d="M${f(x)},${f(y)}q${f(-0.6)},${f(-h * 0.5)} ${f(-1.8)},${f(-h)}M${f(x)},${f(y)}q${f(0.1)},${f(-h * 0.6)} ${f(0.3)},${f(-h * 1.2)}M${f(x)},${f(y)}q${f(0.8)},${f(-h * 0.4)} ${f(2)},${f(-h * 0.85)}" stroke="${c}" stroke-width="0.85" fill="none" stroke-linecap="round"/>`;
+  });
+  // a few wild flowers and clover dots
+  s += scatter(R, rings, 1 / 2600, (x, y) => {
+    const c = R.pick(['#ffffff', '#f6d94a', '#ffffff', '#f3a6c0']);
+    return [0, 1, 2].map((k) => circle([x + k * 2.2 - 2, y + (k % 2) * 1.2], 0.9, c, `stroke="#5c7a2a" stroke-width="0.3"`)).join('');
   });
   s += '</g>';
   s += `<path d="${d}" fill="none" stroke="${pal.grassEdge}" stroke-width="1.3" stroke-linejoin="round"/>`;
+  // grass spilling over its edge: blades every few px along the border
+  let blades = '';
+  for (const r of rings) {
+    const n = r.length;
+    let area = 0;
+    for (let i = 0; i < n; i++) { const a = r[i], b = r[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+    const sgn = area > 0 ? 1 : -1;
+    for (let i = 0; i < n; i++) {
+      const a = r[i], b = r[(i + 1) % n];
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (let t = 0; t < L; t += R.range(4, 9)) {
+        const x = a[0] + ((b[0] - a[0]) * t) / L, y = a[1] + ((b[1] - a[1]) * t) / L;
+        const nx = (sgn * (b[1] - a[1])) / L, ny = (sgn * -(b[0] - a[0])) / L;   // outward
+        if (ny < -0.2 || R() < 0.35) continue;                                   // mostly on the lower edges
+        const hgt = R.range(2, 3.6);
+        blades += `M${f(x - nx)},${f(y - ny)}q${f(nx * 1.5 - 0.6)},${f(-hgt * 0.4)} ${f(nx * 2.4 - 1.2)},${f(-hgt)}M${f(x - nx)},${f(y - ny)}q${f(nx * 1.5 + 0.4)},${f(-hgt * 0.3)} ${f(nx * 2.2 + 1)},${f(-hgt * 0.8)}`;
+      }
+    }
+  }
+  s += `<path d="${blades}" stroke="${pal.grass}" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  s += `<path d="${blades}" stroke="${pal.grassDark}" stroke-width="0.6" fill="none" stroke-linecap="round" opacity="0.8"/>`;
   return s;
 }
 
