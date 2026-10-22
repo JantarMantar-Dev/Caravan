@@ -178,8 +178,8 @@ const stats = document.getElementById('stats');
 let frames = 0, acc = 0, last = performance.now(), cpuAcc = 0, jsAcc = 0;
 const params = new URLSearchParams(location.search);
 if (params.has('set')) { focusSheet(sheets[+params.get('set')]); Object.assign(view, target); }
-// ?review=i : the sheet at exactly 1 css px per unit, top-left at the viewport origin
-if (params.has("review")) { const s = sheets[+params.get("review")]; Object.assign(view, { x: s.x + SHEET_W / 2, y: s.y - SHEET_H / 2, h: SHEET_H }); target = { ...view }; document.body.classList.add("review"); }
+// ?score=i : the sheet at exactly 1 css px per unit, top-left at the viewport origin
+if (params.has("score")) { const s = sheets[+params.get("score")]; Object.assign(view, { x: s.x + SHEET_W / 2, y: s.y - SHEET_H / 2, h: SHEET_H }); target = { ...view }; document.body.classList.add("bare"); }
 else { focusAll(); Object.assign(view, target); }
 if (params.has('zoom')) { const [x, y, h] = params.get('zoom').split(',').map(Number); Object.assign(view, { x, y, h }); target = { ...view }; }
 

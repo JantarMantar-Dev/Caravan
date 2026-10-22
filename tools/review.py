@@ -1,7 +1,7 @@
 """Review harness: score every reference asset as the engine actually draws it.
 
 For each goods sheet the preview is rendered headless at exactly 1 css px per
-reference px (?review=<i>), then every asset is compared against the same
+reference px (?score=<i>), then every asset is compared against the same
 asset in assets/ref/<family>.png:
 
   tiles   the render is compared with the ideal: the reference pushed straight
@@ -42,7 +42,7 @@ HTML = os.path.join(ROOT, 'dist', 'caravan-preview.html')
 
 
 def render(i, out):
-    subprocess.run(['node', os.path.join(ROOT, 'dev', 'shot.mjs'), f'file://{HTML}?review={i}', out, '1536', '1024', '9000'],
+    subprocess.run(['node', os.path.join(ROOT, 'dev', 'shot.mjs'), f'file://{HTML}?score={i}', out, '1536', '1024', '9000'],
                    check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
 
 
@@ -112,7 +112,7 @@ def review_filler(tag, out_dir):
     W, H, cx, cy = 2100, 1300, 1606, -2978
     shot = os.path.join(ROOT, 'dist', 'review', tag, 'render_filler.png')
     if '--no-render' not in sys.argv:
-        subprocess.run(['node', os.path.join(ROOT, 'dev', 'shot.mjs'), f'file://{HTML}?review=0&zoom={cx},{cy},{H}', shot, str(W), str(H), '9000'],
+        subprocess.run(['node', os.path.join(ROOT, 'dev', 'shot.mjs'), f'file://{HTML}?score=0&zoom={cx},{cy},{H}', shot, str(W), str(H), '9000'],
                        check=True, cwd=ROOT, stdout=subprocess.DEVNULL)
     got = cv2.cvtColor(cv2.imread(shot), cv2.COLOR_BGR2RGB)
     props = json.load(open(os.path.join(ROOT, 'assets', 'props.json')))
