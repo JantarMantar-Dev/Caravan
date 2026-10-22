@@ -1,0 +1,21 @@
+{
+  "name": "caravan",
+  "version": "1.0.0",
+  "description": "Caravan: 2D hex trade-route game. Ligne-claire hex asset preview in Three.js.",
+  "scripts": {
+    "build": "sh dev/build.sh",
+    "atlas": "esbuild dev/atlas-debug.js --bundle --outfile=dev/atlas-debug.bundle.js",
+    "shot": "node dev/shot.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "^1.56.1"
+  },
+  "private": true
+}
