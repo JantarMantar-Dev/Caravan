@@ -12,6 +12,9 @@ import * as THREE from 'three';
 import { layers as LAYERS, files } from '../../assets/layers.js';
 import { loadTexture, layerMaterial, waterMaterial, puffTexture, WAVE_PERIOD, RING_PERIOD } from './materials.js';
 import { Sfx } from './sfx.js';
+import { scenes as SCENES } from '../../assets/scenes/index.js';
+import { renderScene, wrap } from '../gen/index.js';
+import { waterField, waterMesh, SWELL_PERIOD } from './water.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#view');
@@ -26,19 +29,19 @@ const params = new URLSearchParams(location.search);
 
 const PLANE_ORDER = ['water', 'sand', 'ground', 'road'];
 const KIND_RANK = { rock: 1, ledge: 1, dock: 2, wall: 3, building: 4, tower: 4, fence: 5, stall: 5, rack: 6, crop: 6,
-  prop: 7, crate: 7, barrel: 7, animal: 8, tree: 9, bush: 9, heather: 9, palm: 9 };
+  prop: 7, crate: 7, barrel: 7, animal: 8, tree: 9, bush: 9, heather: 9, palm: 9, flower: 9 };
 const KIND_LABEL = { rock: 'Rocks', ledge: 'Rocks', dock: 'Dock', wall: 'Walls', building: 'Buildings', tower: 'Buildings',
   fence: 'Fences & stalls', stall: 'Fences & stalls', rack: 'Racks & crops', crop: 'Racks & crops', prop: 'Props',
-  crate: 'Props', barrel: 'Props', animal: 'Animals', tree: 'Trees & bushes', bush: 'Trees & bushes',
+  crate: 'Props', barrel: 'Props', animal: 'Animals', tree: 'Trees & bushes', bush: 'Trees & bushes', flower: 'Trees & bushes',
   heather: 'Trees & bushes', palm: 'Trees & bushes' };
-const PLANE_LABEL = { water: 'Water', sand: 'Sand', ground: 'Ground', road: 'Road' };
+const PLANE_LABEL = { water: 'Water', sand: 'Sand', ground: 'Ground', grass: 'Grass', road: 'Road', frame: 'Hex frame' };
 const EXPLODE_GAP = 95;
 const FAM_ORDER = ["fish", "apple", "wool", "spice"];
 const TILE_NAMES = Object.keys(LAYERS).sort((a, b) => FAM_ORDER.indexOf(a.split("_")[0]) - FAM_ORDER.indexOf(b.split("_")[0]) || a.localeCompare(b));
 const FAMS = [...new Set(TILE_NAMES.map((n) => n.split('_')[0]))];
 
 const state = {
-  tile: null, version: 2, explode: 0, explodeTo: 0, building: false, buildT: 0, items: [], flat: null,
+  tile: null, version: 3, explode: 0, explodeTo: 0, building: false, buildT: 0, items: [], flat: null,
   sel: null, hover: null, time: 0, lastRing: -1, wetItems: [], waterShare: 0,
 };
 const cache = new Map();
@@ -93,6 +96,7 @@ function clearTile() {
 }
 
 async function showTile(name) {
+  if (state.version === 3 && SCENES[name]) return showGenerated(name);
   status('loading ' + name + '…');
   const T = await loadTile(name);
   clearTile();
@@ -144,10 +148,93 @@ async function showTile(name) {
   state.items = items;
   state.wetItems = items.filter((i) => i.type === 'object' && i.wet && (i.kind === 'rock' || i.kind === 'dock'));
   state.waterShare = waterShare(T);
+  state.period = WAVE_PERIOD;
   buildList();
   summary();
   fit();
   status(`${name}: ${L.planes.length} planes · ${L.objects.length} objects · ${L.objects.reduce((n, o) => n + (o.parts?.length ?? 0), 0)} parts`);
+  document.querySelectorAll('#tiles button').forEach((b) => b.classList.toggle('on', b.dataset.tile === name));
+}
+
+// ---------- generated tiles (src/gen): every asset drawn as vectors ----------
+// Rasterised at RES x tile px, so the art stays sharp when zoomed; the water
+// is a shader over a distance field of the land (src/lab/water.js).
+const RES = Math.min(4, Math.max(2, Math.ceil((window.devicePixelRatio || 1) * 2)));
+async function raster(inner, box) {
+  const k = RES;
+  const W = Math.ceil(box[2] * k), H = Math.ceil(box[3] * k);
+  const img = new Image();
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(wrap(inner, box, k));
+  await img.decode();
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  cv.getContext('2d').drawImage(img, 0, 0, W, H);
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.NoColorSpace; t.premultiplyAlpha = true; t.flipY = false;
+  t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return t;
+}
+const genCache = new Map();
+async function loadGenerated(name) {
+  if (genCache.has(name)) return genCache.get(name);
+  const S = renderScene(SCENES[name]);
+  const L = LAYERS[name];
+  const ox = L?.ox ?? S.w / 2, oy = L?.oy ?? S.h / 2;
+  const tex = {};
+  await Promise.all([...S.planes, ...S.objects].map(async (o) => { tex[o.id] = await raster(o.svg, o.box); }));
+  tex.__frame = await raster(S.frame, [0, 0, S.w, S.h]);
+  const flat = L ? await loadTexture(files[L.flat], renderer) : null;
+  const field = waterField(S.w, S.h, S.land.sand, S.stands);
+  const out = { S, tex, ox, oy, field, flat, L };
+  genCache.set(name, out);
+  return out;
+}
+async function showGenerated(name) {
+  status('drawing ' + name + '…');
+  const G = await loadGenerated(name);
+  clearTile();
+  state.tile = name;
+  state.T = { L: { ...(G.L ?? {}), ox: G.ox, oy: G.oy, w: G.S.w, h: G.S.h, objects: G.S.objects }, gen: G };
+  const { S, tex, ox, oy } = G;
+  const rel = (b) => ({ x: b[0] - ox, y: b[1] - oy, w: b[2], h: b[3] });
+  let order = 0;
+  if (G.flat) {
+    state.flat = quad({ x: -ox, y: -oy, w: S.w, h: S.h }, 0, 0, layerMaterial(G.flat));
+    state.flat.renderOrder = order++;
+    group.add(state.flat);
+  }
+  const items = [];
+  const plane = (id, mesh, level) => ({ id, label: PLANE_LABEL[id], kind: id, type: 'plane', mesh, mat: mesh.material, ax: 0, ay: 0, level, band: PLANE_LABEL[id] });
+  const water = waterMesh(S.hex, ox, oy, G.field.tex, S.w, S.h);
+  const byId = Object.fromEntries(S.planes.map((p) => [p.id, p]));
+  items.push(plane('sand', quad(rel(byId.sand.box), 0, 0, layerMaterial(tex.sand)), 1));
+  items.push(plane('water', water, 0));
+  items.push(plane('grass', quad(rel(byId.grass.box), 0, 0, layerMaterial(tex.grass)), 2));
+  items.push(plane('road', quad(rel(byId.road.box), 0, 0, layerMaterial(tex.road)), 3));
+  const kinds = [...new Set(S.objects.map((o) => KIND_LABEL[o.kind] ?? 'Props'))].sort((a, b) => rankOfLabel(a) - rankOfLabel(b));
+  S.objects.forEach((o, i) => {
+    const band = KIND_LABEL[o.kind] ?? 'Props';
+    const fx = o.foot[0] - ox, fy = o.foot[1] - oy;
+    const mesh = quad(rel(o.box), fx, fy, layerMaterial(tex[o.id]));
+    items.push({ id: o.id, label: pretty(o.id), kind: o.kind, type: 'object', mesh, mat: mesh.material, ax: fx, ay: fy,
+      level: 4 + kinds.indexOf(band), band, z: i, rank: KIND_RANK[o.kind] ?? 7, wet: !!o.wet });
+  });
+  const fr = plane('frame', quad({ x: -ox, y: -oy, w: S.w, h: S.h }, 0, 0, layerMaterial(tex.__frame)), 0);
+  for (const it of [...items, fr]) {
+    it.mesh.renderOrder = order++;
+    it.on = true; it.alpha = 1; it.dy = 0; it.sx = 1; it.sy = 1; it.flash = 0; it.vis = 1;
+    group.add(it.mesh);
+  }
+  items.push(fr);
+  state.items = items;
+  state.wetItems = items.filter((i) => i.type === 'object' && i.wet && (i.kind === 'rock' || i.kind === 'dock'));
+  state.waterShare = G.field.share;
+  state.period = SWELL_PERIOD;
+  buildList();
+  summary();
+  fit();
+  status(`${name}: generated · 4 planes · ${S.objects.length} assets · drawn at ${RES}x`);
   document.querySelectorAll('#tiles button').forEach((b) => b.classList.toggle('on', b.dataset.tile === name));
 }
 
@@ -215,6 +302,14 @@ function buildList() {
 
 function summary() {
   const L = state.T.L;
+  if (state.T.gen) {
+    const kinds = {};
+    for (const o of state.T.gen.S.objects) kinds[o.kind] = (kinds[o.kind] ?? 0) + 1;
+    $('#summary').innerHTML = `<b>${state.tile}</b> · generated from the reference layout<br>` +
+      Object.entries(kinds).map(([k, n]) => `${n} ${k}`).join(' · ') +
+      '<br>Every asset is a vector drawing: whole trees and rocks, one projection for everything built, live water.';
+    return;
+  }
   const kinds = {};
   for (const o of L.objects) kinds[o.kind] = (kinds[o.kind] ?? 0) + 1;
   $('#summary').innerHTML = `<b>${state.tile}</b> · ${L.w}×${L.h} px<br>` +
@@ -231,6 +326,7 @@ $('#version').onclick = (e) => {
   state.version = v;
   document.querySelectorAll('#version button').forEach((b) => b.classList.toggle('on', +b.dataset.v === v));
   if (v === 1) { stopBuild(); state.explodeTo = 0; $('#explode').classList.remove('on'); }
+  else if (state.tile && (v === 3) !== !!state.T?.gen) { stopBuild(); showTile(state.tile); }
   $('#build').disabled = $('#explode').disabled = v === 1;
 };
 $('#explode').onclick = () => {
@@ -424,7 +520,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  state.time += dt;
+  if (!state.still) state.time += dt;
   if (state.building && !state.freeze) stepBuild(dt);
   stepPuffs(dt);
   const ex = state.explodeTo;
@@ -435,7 +531,7 @@ function frame(now) {
   for (const k of ['x', 'y', 'h']) view[k] += (target[k] - view[k]) * (1 - Math.exp(-dt * 9));
   applyCamera();
 
-  const layered = state.version === 2;
+  const layered = state.version !== 1;
   if (state.flat) state.flat.material.uniforms.uOpacity.value = layered ? 0 : 1;
   const focus = state.hover ?? state.sel;
   for (const it of state.items) {
@@ -452,7 +548,7 @@ function frame(now) {
   }
   // ambient: surf follows the shore wave; a rock or post slaps on each ring
   if (layered && state.waterShare > 0) {
-    sfx.ambient((state.time / WAVE_PERIOD) % 1, Math.min(1, state.waterShare * 2.2));
+    sfx.ambient((state.time / (state.period ?? WAVE_PERIOD)) % 1, Math.min(1, state.waterShare * 2.2));
     const ring = Math.floor(state.time / (RING_PERIOD / 2));
     if (ring !== state.lastRing && state.wetItems.length && !state.building) {
       state.lastRing = ring;
@@ -471,8 +567,11 @@ const start = params.get('tile') && LAYERS[params.get('tile')] ? params.get('til
 showTile(start).then(() => {
   if (params.has('explode')) { state.explodeTo = 1; state.explode = 1; fit(); Object.assign(view, target); $('#explode').classList.add('on'); }
   if (params.has('v1')) $('#version button[data-v="1"]').click();
+  if (params.has('v2')) $('#version button[data-v="2"]').click();
   if (params.has('t')) state.time = +params.get('t');
+  if (params.has('still')) state.still = true;
   if (params.has('buildAt')) { startBuild(); for (let k = 0; k < +params.get('buildAt') * 60; k++) stepBuild(1 / 60); state.freeze = true; }
+  if (params.has('zoom')) { target = { x: +(params.get('cx') ?? 0), y: -(params.get('cy') ?? 0), h: target.h / +params.get('zoom') }; userCam = true; }
   Object.assign(view, target);
   window.__ready = true;
 });
