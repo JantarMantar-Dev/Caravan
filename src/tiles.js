@@ -2,7 +2,7 @@
 // matching the reference sheets. Coordinates are tile-local design px, y down,
 // origin at the hex centre. Explicit placements carry the composition; a seeded
 // scatter fills borders with biome flora while respecting water, roads and yards.
-import { HEX_A, HEX_R, edgeMid, insideHex, dirIndex, DIR_NAMES } from './engine/hex.js';
+import { HEX_A, HEX_R, edgeMid, edgePort, insideHex, dirIndex, DIR_NAMES } from './engine/hex.js';
 import { rng } from './art/ink.js';
 
 // iso offset helper (matches the sprite projection) for laying out pens and fences
@@ -179,11 +179,15 @@ export function waterAt(tile, x, y) {
   return ws / wt;
 }
 
+const lerpMid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+
 export function roadDist(tile, x, y) {
   const rs = tile.roads.map(dirIndex);
   if (!rs.length) return 1e9;
   let best = 1e9;
-  const segs = rs.length === 2 && Math.abs(rs[0] - rs[1]) !== 3 ? [[edgeMid(rs[0]), [0, 0], edgeMid(rs[1])]] : rs.map((i) => [[0, 0], [0, 0], edgeMid(i)]);
+  const P = (i) => edgePort(i, tile.roadOff?.[i] ?? 0);
+  const segs = rs.length === 2 ? (Math.abs(rs[0] - rs[1]) !== 3 ? [[P(rs[0]), [0, 0], P(rs[1])]] : [[P(rs[0]), lerpMid(P(rs[0]), P(rs[1])), P(rs[1])]])
+    : rs.map((i) => [[0, 0], [0, 0], P(i)]);
   for (const [a, b, c] of segs) for (let t = 0; t <= 1.0001; t += 0.025) {
     const u = 1 - t, px = u * u * a[0] + 2 * u * t * b[0] + t * t * c[0], py = u * u * a[1] + 2 * u * t * b[1] + t * t * c[1];
     best = Math.min(best, Math.hypot(x - px, y - py));

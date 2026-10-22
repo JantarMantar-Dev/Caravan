@@ -16,7 +16,7 @@ export const BIOME_PAL = [
   // ground is near-flat colour with fine mottling, not big cel blotches.
   /* meadow */ ['#a4c82c', '#9ac22a', '#acce36', '#6f9c22', '#ffffff'],
   /* autumn */ ['#f8be30', '#f0b12a', '#fbc642', '#c47a14', '#e0601a'],
-  /* moor   */ ['#d2b157', '#cbab52', '#dab85d', '#8c7a3a', '#9e648b'],
+  /* moor   */ ['#c8aa52', '#c0a34c', '#d5b65c', '#8c7a3a', '#9e648b'],
   /* jungle */ ['#a8c422', '#9fbc20', '#b0ca30', '#5b9c17', '#4f8f18'],
 ];
 
@@ -33,6 +33,8 @@ precision highp int;
 varying vec2 vWorld;
 uniform sampler2D uData0;
 uniform sampler2D uData1;
+uniform sampler2D uData2;   // road exit offsets, edges 0-3
+uniform sampler2D uData3;   // road exit offsets, edges 4-5
 uniform ivec2 uOrigin;
 uniform ivec2 uSize;
 uniform ivec2 uFocus;
@@ -68,6 +70,17 @@ bool inMap(ivec2 h) { ivec2 t = h - uOrigin; return all(greaterThanEqual(t, ivec
 vec4 data0(ivec2 h) { return inMap(h) ? texelFetch(uData0, h - uOrigin, 0) : vec4(0.0); }
 vec4 data1(ivec2 h) { return inMap(h) ? texelFetch(uData1, h - uOrigin, 0) : vec4(0.5, 0.5, 0.0, 0.0); }
 vec2 edgeMid(int i) { float a = float(i) * 1.0471976; return vec2(cos(a), sin(a)) * A; }
+// road exit on edge i: the midpoint slid along the edge so filler roads meet
+// the painted roads of the reference town tiles exactly
+vec2 edgePort(ivec2 h, int i) {
+  if (!inMap(h)) return edgeMid(i);
+  vec4 o = i < 4 ? texelFetch(uData2, h - uOrigin, 0) : texelFetch(uData3, h - uOrigin, 0);
+  int k = i < 4 ? i : i - 4;
+  float v = k == 0 ? o.r : k == 1 ? o.g : k == 2 ? o.b : o.a;
+  float off = (v * 255.0 - 128.0) / 127.0 * R * 0.5;
+  float a = float(i) * 1.0471976;
+  return vec2(cos(a), sin(a)) * A + vec2(-sin(a), cos(a)) * off;
+}
 float hexEdgeDist(vec2 lp) { // distance from local point to hex boundary, + inside
   float m = -1e9;
   for (int i = 0; i < 6; i++) { float a = float(i) * 1.0471976; m = max(m, dot(lp, vec2(cos(a), sin(a)))); }
@@ -224,8 +237,9 @@ void main() {
   if (mask != 0) {
     int n = 0, i0 = -1, i1 = -1;
     for (int i = 0; i < 6; i++) if ((mask & (1 << i)) != 0) { n++; if (i0 < 0) i0 = i; else if (i1 < 0) i1 = i; }
-    if (n == 2 && (i1 - i0) != 3) rd = sdBezier(lp, edgeMid(i0), vec2(0.0), edgeMid(i1));
-    else for (int i = 0; i < 6; i++) if ((mask & (1 << i)) != 0) rd = min(rd, sdSeg(lp, vec2(0.0), edgeMid(i) * 1.02));
+    if (n == 2 && (i1 - i0) != 3) rd = sdBezier(lp, edgePort(h, i0), vec2(0.0), edgePort(h, i1));
+    else if (n == 2) rd = sdSeg(lp, edgePort(h, i0) * 1.02, edgePort(h, i1) * 1.02);
+    else for (int i = 0; i < 6; i++) if ((mask & (1 << i)) != 0) rd = min(rd, sdSeg(lp, vec2(0.0), edgePort(h, i) * 1.02));
     rd += (vnoise(p * 0.045) - 0.5) * 3.0;
     rd -= 27.0;                                   // ref roads ~55 units wide
   }
@@ -273,12 +287,12 @@ export class TerrainChunk {
       const t = new THREE.DataTexture(data, map.w, map.h, THREE.RGBAFormat, THREE.UnsignedByteType);
       t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true; return t;
     };
-    this.t0 = mk(map.d0); this.t1 = mk(map.d1);
+    this.t0 = mk(map.d0); this.t1 = mk(map.d1); this.t2 = mk(map.d2); this.t3 = mk(map.d3);
     const pal = BIOME_PAL.flat().map(hex3);
     this.material = new THREE.ShaderMaterial({
       vertexShader: vert, fragmentShader: frag,
       uniforms: {
-        uData0: { value: this.t0 }, uData1: { value: this.t1 },
+        uData0: { value: this.t0 }, uData1: { value: this.t1 }, uData2: { value: this.t2 }, uData3: { value: this.t3 },
         uOrigin: { value: new THREE.Vector2(map.q0, map.r0) }, uSize: { value: new THREE.Vector2(map.w, map.h) },
         uFocus: { value: new THREE.Vector2(...(focus ?? [0, 0])) }, uFocusOn: { value: focus ? 1 : 0 },
         uTime: { value: 0 }, uPal: { value: pal },
@@ -302,7 +316,7 @@ export class TerrainChunk {
   update(time) {
     this.material.uniforms.uTime.value = time;
   }
-  refresh() { this.t0.needsUpdate = true; this.t1.needsUpdate = true; }
+  refresh() { for (const t of [this.t0, this.t1, this.t2, this.t3]) t.needsUpdate = true; }
 }
 
 export function hexOutlinePoints(scale = 1) { return corners(scale); }

@@ -291,6 +291,50 @@ def borderless(rgba, sdf, half):
     return out
 
 
+# Road exits of the town tiles: (edge, offset). Edge i is the engine direction
+# (0 E, 1 NE, 2 NW, 3 W, 4 SW, 5 SE); offset runs along the edge tangent
+# (y-up rotation of the edge normal by +90 deg), in world units from the edge
+# midpoint. Found by scanning each edge for road-coloured runs (review loop 3),
+# beach runs on the fishing tiles removed by eye.
+PORTS = {
+    'fish_1': [(2, 13.5), (0, -83.0)], 'fish_2': [(2, 17.5), (5, 112.5)],
+    'apple_1': [(3, 80.0), (0, -80.0)], 'apple_2': [(3, 78.0), (0, -103.0)],
+    'wool_1': [(3, 89.0), (0, -91.0)], 'wool_2': [(3, 92.0), (0, -91.0)],
+    'spice_1': [(3, 92.0), (5, -5.0)], 'spice_2': [(3, 95.0), (5, -16.0)],
+}
+ROAD_COLS = np.array([[254, 237, 194], [251, 211, 138], [252, 226, 170]], float)
+
+
+def port_point(edge, off, inset=0.0):
+    """Hex-local, y-down point of a road exit (inset world units inside the edge)."""
+    a = edge * np.pi / 3
+    A = HEX_R * np.sqrt(3) / 2 - inset
+    up = np.array([np.cos(a), np.sin(a)]) * A + np.array([-np.sin(a), np.cos(a)]) * off
+    return np.array([up[0], -up[1]])
+
+
+def road_path(rgb, ox, oy, ports):
+    """Centre line of the painted road between the two exits: cheapest path
+    over a cost map that is low on road colour and lowest at the road's middle."""
+    from skimage.graph import route_through_array
+    d = np.min(np.linalg.norm(rgb[..., None, :] * 255 - ROAD_COLS[None, None], axis=3), axis=2)
+    road = (d < 34).astype(np.uint8)
+    road = cv2.morphologyEx(road, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    dt = cv2.distanceTransform(road, cv2.DIST_L2, 5)
+    cost = np.where(road > 0, 1.0 + 8.0 * np.exp(-dt / 6.0), 60.0)
+    pts = [port_point(e, o, 6) + [ox, oy] for e, o in ports]
+    (x0, y0), (x1, y1) = pts
+    path, _ = route_through_array(cost, (int(round(y0)), int(round(x0))), (int(round(y1)), int(round(x1))), fully_connected=True, geometric=True)
+    path = np.array(path, float)[:, ::-1] - [ox, oy]
+    path = cv2.GaussianBlur(path.reshape(-1, 1, 2), (1, 0), sigmaX=0, sigmaY=6).reshape(-1, 2) if len(path) > 20 else path
+    keep = [0]
+    for i in range(1, len(path)):
+        if np.linalg.norm(path[i] - path[keep[-1]]) >= 8: keep.append(i)
+    if keep[-1] != len(path) - 1: keep.append(len(path) - 1)
+    out = [port_point(*ports[0])] + [path[i] for i in keep] + [port_point(*ports[1])]
+    return [[round(float(x), 1), round(float(y), 1)] for x, y in out]
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     manifest = {'hexR': HEX_R, 'tiles': {}, 'items': {}}
@@ -339,7 +383,11 @@ def main():
             name = f'{fam}_{stage}'
             save_img(os.path.join(OUT, name + '.avif'), out)
             save_img(os.path.join(OUT, name + '_m.avif'), borderless(out, hex_sdf(gx, gy, HEX_R), half))
-            manifest['tiles'][name] = dict(file=f'hex/{name}.avif', map=f'hex/{name}_m.avif', w=int(out.shape[1]), h=int(out.shape[0]),
+            if name in PORTS:
+                extra = dict(ports=[dict(edge=e, off=o) for e, o in PORTS[name]], road=road_path(out[..., :3], ox, oy, PORTS[name]))
+            else:
+                extra = {}
+            manifest['tiles'][name] = dict(**extra, file=f'hex/{name}.avif', map=f'hex/{name}_m.avif', w=int(out.shape[1]), h=int(out.shape[0]),
                                            ox=float(ox), oy=float(oy), ink=round(2 * half, 2),
                                            src=dict(verts=[[round(float(a), 2), round(float(b), 2)] for a, b in sv],
                                                     support=support, iou=round(fit['iou'], 4)))

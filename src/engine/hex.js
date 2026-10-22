@@ -33,6 +33,14 @@ export function edgeMid(i, k = 1) {
   return [Math.cos(a) * HEX_A * k, -Math.sin(a) * HEX_A * k];
 }
 
+// A road exit on edge i, `off` world units along the edge tangent (the edge
+// normal rotated +90 deg, y-up), in local sprite space (y down). The same
+// physical point seen from the neighbour across edge i is edge (i+3)%6 at -off.
+export function edgePort(i, off = 0, k = 1) {
+  const a = (i * Math.PI) / 3;
+  return [Math.cos(a) * HEX_A * k - Math.sin(a) * off, -(Math.sin(a) * HEX_A * k + Math.cos(a) * off)];
+}
+
 // Hex corners in local sprite space (y down), pointy-top.
 export function corners(scale = 1) {
   const out = [];
@@ -60,6 +68,9 @@ export class HexMap {
     this.q0 = q0; this.r0 = r0; this.w = w; this.h = h;
     this.d0 = new Uint8Array(w * h * 4);
     this.d1 = new Uint8Array(w * h * 4);
+    // road exit offsets along each edge (edges 0-3 in d2, 4-5 in d3), 128 = midpoint
+    this.d2 = new Uint8Array(w * h * 4).fill(128);
+    this.d3 = new Uint8Array(w * h * 4).fill(128);
     for (let i = 0; i < w * h; i++) { this.d1[i * 4] = 128; this.d1[i * 4 + 1] = 128; } // seed 0 = hex absent
     this.version = 0;
   }
@@ -68,8 +79,13 @@ export class HexMap {
     if (x < 0 || y < 0 || x >= this.w || y >= this.h) return -1;
     return (y * this.w + x) * 4;
   }
-  set(q, r, { biome, water, roads, seed, plaza } = {}) {
+  set(q, r, { biome, water, roads, seed, plaza, roadOff } = {}) {
     const i = this.idx(q, r); if (i < 0) return;
+    // roadOff: { edge: offset } in world units along the edge tangent (see edgePort)
+    if (roadOff) for (const [e, off] of Object.entries(roadOff)) {
+      const k = +e, v = Math.max(0, Math.min(255, Math.round(128 + (off / (HEX_R / 2)) * 127)));
+      if (k < 4) this.d2[i + k] = v; else this.d3[i + k - 4] = v;
+    }
     if (biome !== undefined) this.d0[i] = typeof biome === 'string' ? BIOMES[biome] : biome;
     if (roads !== undefined) this.d0[i + 1] = roads.reduce((m, d) => m | (1 << (typeof d === 'string' ? dirIndex(d) : d)), 0);
     if (water !== undefined) this.d0[i + 2] = Math.round(water * 255);

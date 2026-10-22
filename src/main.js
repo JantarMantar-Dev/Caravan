@@ -56,7 +56,7 @@ const dressFillerSheet = (layer, props) => FILLER.forEach((f, i) => {
   if (f.water) return;
   const [x, y] = fillerPos(i);
   const tile = { water: null, roads: (f.roads ?? []).map((d) => DIR_NAMES[d]) };
-  for (const s of dressFiller(props, f.biome, tile, 100 + i * 13)) layer.add(s.name, x + s.x, y - s.y);
+  for (const s of dressFiller(props, f.biome, tile, 100 + i * 13, { density: tile.roads.length ? 1.15 : 1.5 })) layer.add(s.name, x + s.x, y - s.y);
 });
 sprites.mesh.renderOrder = 1;
 scene.add(sprites.mesh);

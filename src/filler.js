@@ -31,7 +31,7 @@ export function dressFiller(props, biome, tile, seed, { density = 1 } = {}) {
   // little lighter so towns keep the focus
   const target = Math.round((biome === 'moor' ? 24 : 16) * density);
   let tries = 0;
-  while (out.length < target && tries++ < 3000) {
+  while (out.length < target && tries++ < 5000) {
     const pick = (r() < 0.5 && big.length ? big : small.length ? small : big);
     const p = pick[Math.floor(r() * pick.length)];
     const rad = Math.max(14, p.w * 0.4);
