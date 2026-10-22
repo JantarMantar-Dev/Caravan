@@ -74,10 +74,10 @@
   {
    "id": "rock_shore",
    "type": "rock",
-   "x": 288,
+   "x": 276,
    "y": 505,
-   "w": 140,
-   "h": 80,
+   "w": 122,
+   "h": 70,
    "n": 5,
    "peak": 0.35,
    "wet": true,
@@ -174,8 +174,8 @@
     228,
     352
    ],
-   "w": 56,
-   "d": 32,
+   "w": 48,
+   "d": 28,
    "h": 18,
    "fill": "fish",
    "seed": 45
@@ -265,7 +265,8 @@
    "x": 275,
    "y": 133,
    "r": 40,
-   "seed": 61
+   "seed": 61,
+   "form": "broad"
   },
   {
    "id": "tree_1b",
@@ -273,7 +274,9 @@
    "x": 226,
    "y": 112,
    "r": 25,
-   "seed": 62
+   "seed": 62,
+   "form": "spread",
+   "flip": true
   },
   {
    "id": "pine",
@@ -290,7 +293,8 @@
    "x": 124,
    "y": 152,
    "r": 19,
-   "seed": 64
+   "seed": 64,
+   "form": "sapling"
   },
   {
    "id": "tree_4a",
@@ -298,7 +302,9 @@
    "x": 425,
    "y": 208,
    "r": 36,
-   "seed": 65
+   "seed": 65,
+   "form": "broad",
+   "flip": true
   },
   {
    "id": "tree_4b",
@@ -306,7 +312,8 @@
    "x": 466,
    "y": 214,
    "r": 23,
-   "seed": 66
+   "seed": 66,
+   "form": "spread"
   },
   {
    "id": "tree_5",
@@ -314,7 +321,9 @@
    "x": 476,
    "y": 332,
    "r": 20,
-   "seed": 67
+   "seed": 67,
+   "form": "sapling",
+   "flip": true
   },
   {
    "id": "tree_stall",
@@ -322,7 +331,8 @@
    "x": 372,
    "y": 368,
    "r": 24,
-   "seed": 68
+   "seed": 68,
+   "form": "spread"
   },
   {
    "id": "flowers_1",

@@ -1,10 +1,11 @@
-// Rocks: one asset per rock or cluster, whole boulders with a lit face, a
-// shaded face, a cracked edge or two and a full ink outline. A rock standing
+// Rocks: one asset per rock or cluster, one main angular mass plus smaller
+// stones, each in flat planes (lit face, cool shadow face, one small
+// highlight) with a full ink outline and a crack only where it reads. A rock standing
 // in water gets a wet band at its foot; the water shader draws the foam
 // around it, so the rock itself never carries painted foam.
-import { INK, IW, IW2, rng, f, path, rounded, ellipse, circle, id, bboxOf, line, mix, lgrad, scallop } from './util.js';
+import { INK, IW, IW2, IW3, rng, f, path, rounded, ellipse, id, bboxOf, line, mix, scallop } from './util.js';
 
-export const STONE = { hi: '#f5f1ea', light: '#d8cfc4', mid: '#9d9894', dark: '#77737a', deep: '#545160', wet: '#4e6b78' };
+export const STONE = { hi: '#ece8e1', light: '#cdc8c1', mid: '#a7a5a6', dark: '#7f8291', deep: '#636677', wet: '#55707e' };
 
 function boulder(R, px, py, bw, bh, peak, wet, pal) {
   // silhouette: base corners plus 4-6 vertices over the top; a crag pulls its
@@ -34,47 +35,30 @@ function boulder(R, px, py, bw, bh, peak, wet, pal) {
   const out = [];
   out.push(path(d, INK, `stroke="${INK}" stroke-width="${f(IW * 2)}" stroke-linejoin="round"`));
   out.push(`<clipPath id="${clip}"><path d="${d}"/></clipPath>`);
-  const [g1, f1] = lgrad([[0, pal.hi], [0.45, pal.light], [1, mix(pal.light, pal.mid, 0.6)]], 0.2, 0, 0.5, 1);
-  out.push(g1 + path(d, f1));
+  // flat planes: the lit face, a cool shadow face right of the ridge, a
+  // darker facet low on the shadow side; one small highlight on top
+  out.push(path(d, pal.light));
   out.push(`<g clip-path="url(#${clip})">`);
   const big = bw * 2;
-  // shaded face: right of the ridge, cooler and darker towards the foot
-  const [g2, f2] = lgrad([[0, pal.mid], [0.6, pal.dark], [1, pal.deep]], 0, 0, 0.3, 1, 'objectBoundingBox');
-  out.push(g2 + path(`M${f(T[0])},${f(T[1] - 1)}L${f(M[0])},${f(M[1])}L${f(B[0])},${f(py + bh * 0.2)}L${f(px + bw * 0.6)},${f(py + bh * 0.2)}L${f(px + bw * 0.6)},${f(T[1] - 1)}Z`, f2));
-  // second facet on the shaded face, darker, from a shoulder vertex down
+  out.push(path(`M${f(T[0])},${f(T[1] - 1)}L${f(M[0])},${f(M[1])}L${f(B[0])},${f(py + bh * 0.2)}L${f(px + bw * 0.6)},${f(py + bh * 0.2)}L${f(px + bw * 0.6)},${f(T[1] - 1)}Z`, pal.dark));
   const sh = up[Math.max(0, ti - Math.max(1, Math.round(ti * 0.6)))];
-  const S2 = [sh[0] - bw * 0.06, sh[1] + bh * 0.08];
-  out.push(path(`M${f(S2[0])},${f(S2[1])}L${f(px + bw * R.range(0.28, 0.36))},${f(py + 3)}L${f(px + big)},${f(py + big)}L${f(px + big)},${f(S2[1] - big)}Z`, pal.deep, 'opacity="0.55"'));
-  // top facet catching the light, left of the ridge
-  const lt = up[Math.min(k, ti + 1)];
-  out.push(path(`M${f(T[0])},${f(T[1])}L${f(lt[0])},${f(lt[1])}L${f(lt[0] + bw * 0.06)},${f(lt[1] + bh * 0.22)}L${f(M[0] - bw * 0.1)},${f(M[1] - bh * 0.05)}Z`, pal.hi));
-  // the foot of the rock in its own shadow
-  out.push(path(`M${f(px - big)},${f(py - bh * 0.1)}Q${f(px)},${f(py - bh * 0.2)} ${f(px + big)},${f(py - bh * 0.3)}L${f(px + big)},${f(py + big)}L${f(px - big)},${f(py + big)}Z`, pal.deep, 'opacity="0.35"'));
-  // stone grain: pits and flecks
-  for (let k = 0; k < Math.round(bw * bh / 140); k++) {
-    const sx = px + R.range(-0.45, 0.45) * bw, sy = py - R.range(0.05, 0.9) * bh;
-    out.push(circle([sx, sy], R.range(0.3, 0.6), R() < 0.6 ? pal.deep : pal.hi, `opacity="${f(R.range(0.25, 0.5))}"`));
+  const S2 = [sh[0] - bw * 0.06, sh[1] + bh * 0.1];
+  out.push(path(`M${f(S2[0])},${f(S2[1])}L${f(px + bw * R.range(0.28, 0.36))},${f(py + 3)}L${f(px + big)},${f(py + big)}L${f(px + big)},${f(S2[1] - big)}Z`, pal.deep));
+  if (bw > 26) {
+    const lt = up[Math.min(k, ti + 1)];
+    out.push(path(`M${f(T[0])},${f(T[1])}L${f(lt[0])},${f(lt[1])}L${f(lt[0] + bw * 0.05)},${f(lt[1] + bh * 0.16)}L${f(M[0] - bw * 0.12)},${f(M[1] - bh * 0.12)}Z`, pal.hi));
   }
-  if (wet) {
-    // wet and darker at the waterline, weed in the splash zone, a bright sheen above
-    const [g3, f3] = lgrad([[0, pal.wet, 0], [0.5, pal.wet, 0.5], [1, '#2a4650', 0.85]], 0, 0, 0, 1);
-    out.push(g3 + `<path d="M${f(px - bw)},${f(py - bh * 0.13)}Q${f(px)},${f(py - bh * 0.2)} ${f(px + bw)},${f(py - bh * 0.12)}L${f(px + bw)},${f(py + bh * 0.2)}L${f(px - bw)},${f(py + bh * 0.2)}Z" fill="${f3}"/>`);
-    out.push(line([[px - bw * 0.4, py - bh * 0.17], [px - bw * 0.05, py - bh * 0.21], [px + bw * 0.2, py - bh * 0.18]], 0.9, '#f2fbff', 'opacity="0.7"'));
-  } else {
-    // moss on the lit shoulders of a dry rock
-    for (let k = 0; k < 1 + Math.round(bw / 30); k++) {
-      const q = up[Math.min(k + ti + 1, up.length - 1)];
-      out.push(`<path d="${scallop(q[0] + bw * 0.04, q[1] + bh * 0.06, Math.max(2.2, bw * R.range(0.06, 0.1)), R, 5, 0.35)}" fill="#7fae33" stroke="#3f6216" stroke-width="0.6"/>`);
-    }
+  // the foot sits in the ground (or the water): a flat dark band
+  if (wet) out.push(`<path d="M${f(px - bw)},${f(py - bh * 0.09)}Q${f(px)},${f(py - bh * 0.13)} ${f(px + bw)},${f(py - bh * 0.07)}L${f(px + bw)},${f(py + bh)}L${f(px - bw)},${f(py + bh)}Z" fill="${pal.wet}" opacity="0.75"/>`);
+  else {
+    out.push(path(`M${f(px - big)},${f(py - bh * 0.08)}Q${f(px)},${f(py - bh * 0.14)} ${f(px + big)},${f(py - bh * 0.2)}L${f(px + big)},${f(py + big)}L${f(px - big)},${f(py + big)}Z`, pal.deep, 'opacity="0.5"'));
   }
-  // ridge, facet edge and a crack or two
-  out.push(line([[T[0] - 1.6, T[1] + 3], [M[0] - 1.8, M[1]], [B[0] - 2.6, py - bh * 0.18]], 1.1, '#ffffff', 'opacity="0.75"'));
+  // the ridge, and a crack only on the bigger stones
   out.push(line([T, M, [B[0] - 1, py - bh * 0.1]], IW2, INK));
-  out.push(line([S2, [S2[0] + bw * 0.05, S2[1] + bh * 0.25]], IW2 * 0.9, INK, 'opacity="0.8"'));
-  for (let c = 0; c < 1 + (bw > 40 ? 1 : 0); c++) {
+  if (bw > 34) {
     const e = up[1 + Math.floor(R() * (k - 1))];
-    const ix = e[0] + (px - e[0]) * R.range(0.15, 0.3), iy = e[1] + (py - bh * 0.5 - e[1]) * R.range(0.15, 0.3);
-    out.push(line([e, [ix, iy], [ix + R.range(-3, 3), iy + R.range(2, 4)]], IW2 * 0.95));
+    const ix = e[0] + (px - e[0]) * R.range(0.15, 0.25), iy = e[1] + (py - bh * 0.5 - e[1]) * R.range(0.15, 0.25);
+    out.push(line([e, [ix, iy], [ix + R.range(-2, 2), iy + R.range(2, 3)]], IW3));
   }
   out.push('</g>');
   return { svg: out.join(''), ext: [[px - bw * 0.55 - IW, Math.min(...up.map((p) => p[1])) - IW], [px + bw * 0.55 + IW, py + bh * 0.08 + IW]] };
@@ -86,24 +70,13 @@ export function rock({ x, y, w = 40, h = 30, n = 1, seed = 1, peak = 0.3, wet = 
   const R = rng(seed);
   const parts = [];
   if (n === 1) parts.push([x, y, w, h]);
-  else if (n <= 3) {
-    // the biggest boulder at the back, the rest in front and to the sides
-    parts.push([x + w * R.range(-0.08, 0.08), y - h * 0.18, w * 0.62, h]);
+  else {
+    // one main angular mass, the rest smaller and stepping down to each side
+    parts.push([x - w * 0.06, y - h * 0.1, w * 0.56, h]);
+    const slots = [[0.34, 0.02, 0.5], [-0.36, 0.06, 0.42], [0.12, 0.16, 0.34], [0.52, 0.12, 0.28], [-0.14, 0.2, 0.26]];
     for (let i = 1; i < n; i++) {
-      const side = i % 2 ? -1 : 1;
-      const s = R.range(0.45, 0.62) * 0.85;
-      parts.push([x + side * w * 0.38 + R.range(-2, 2), y + h * 0.06, w * s, h * s * R.range(0.85, 1.05)]);
-    }
-  } else {
-    // a crag: a back row of tall peaks, a front row of lower boulders
-    const back = Math.ceil(n / 2), front = n - back;
-    for (let i = 0; i < back; i++) {
-      const t = back === 1 ? 0.5 : i / (back - 1);
-      parts.push([x + (t - 0.5) * w * 0.6 + R.range(-3, 3), y - h * 0.2 + R.range(-3, 3), w * R.range(0.44, 0.52), h * R.range(0.72, 0.86) * (t === 0.5 ? 1 : 0.88)]);
-    }
-    for (let i = 0; i < front; i++) {
-      const t = front === 1 ? 0.5 : i / (front - 1);
-      parts.push([x + (t - 0.5) * w * 0.78 + R.range(-3, 3), y + R.range(-2, 3), w * R.range(0.34, 0.42), h * R.range(0.4, 0.52)]);
+      const [dx, dy, s] = slots[(i - 1) % slots.length];
+      parts.push([x + dx * w + R.range(-2, 2), y + dy * h, w * s * R.range(0.92, 1.05), h * s * R.range(1.0, 1.2)]);
     }
   }
   parts.sort((a, b) => a[1] - b[1]);

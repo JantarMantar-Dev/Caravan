@@ -11,6 +11,9 @@ export const GROUND = {
   road: '#f6e3ad', roadEdge: '#8b6a3a', roadDot: '#dfc58f',
 };
 
+// where feet wear the sand: the door, the rack, the land end of the dock
+const WEAR = [[278, 314, 13], [120, 294, 12], [188, 250, 10], [172, 320, 16]];
+
 const ringsPath = (rings) => rings.map((r) => smooth(r, true, 0.9)).join('');
 
 function bounds(rings) {
@@ -44,12 +47,13 @@ export function sand({ rings, seed = 21, pal = GROUND }) {
   let s = `<clipPath id="${c}"><path d="${d}" clip-rule="evenodd"/></clipPath>`;
   s += `<path d="${d}" fill="${pal.sand}" fill-rule="evenodd"/>`;
   s += `<g clip-path="url(#${c})">`;
-  s += scatter(R, rings, 1 / 900, (x, y) => `<path d="${blob(R, x, y, R.range(6, 14))}" fill="${pal.sandLight}" opacity="0.7"/>`);
-  s += scatter(R, rings, 1 / 70, (x, y) => circle([x, y], R.range(0.45, 0.85), pal.sandDot));
-  s += scatter(R, rings, 1 / 2600, (x, y) => ellipse([x, y], R.range(1.4, 2.4), R.range(0.9, 1.3), mix('#b9b0a4', '#ffffff', R() * 0.3), `stroke="${INK}" stroke-width="0.5"`));
-  // wind ripples and the odd shell
-  s += scatter(R, rings, 1 / 450, (x, y) => `<path d="M${f(x - 4)},${f(y)}q${f(4)},${f(-1.6)} ${f(8)},0" stroke="${pal.sandDot}" stroke-width="0.7" fill="none" opacity="0.7"/>`);
-  s += scatter(R, rings, 1 / 6000, (x, y) => `<path d="M${f(x - 1.8)},${f(y)}a1.8,1.6 0 0 1 3.6,0Z" fill="#fbe9e0" stroke="#b08a70" stroke-width="0.5"/>`);
+  // a few broad lighter areas, sparse grains and pebbles; nothing that
+  // turns to noise at game zoom
+  s += scatter(R, rings, 1 / 3200, (x, y) => `<path d="${blob(R, x, y, R.range(14, 26))}" fill="${pal.sandLight}" opacity="0.8"/>`);
+  // worn, compacted ground where people walk: the door, the rack, the dock
+  for (const [x, y, r] of WEAR) if (inPoly(rings, x, y)) s += `<path d="${blob(R, x, y, r)}" fill="${pal.sandDot}" opacity="0.45"/>`;
+  s += scatter(R, rings, 1 / 700, (x, y) => circle([x, y], R.range(0.5, 0.8), pal.sandDot));
+  s += scatter(R, rings, 1 / 6000, (x, y) => ellipse([x, y], R.range(1.4, 2.2), R.range(0.9, 1.2), '#b9b0a4', `stroke="${INK}" stroke-width="0.5"`));
   s += '</g>';
   return s;
 }
@@ -61,21 +65,25 @@ export function grass({ rings, seed = 22, pal = GROUND }) {
   let s = `<clipPath id="${c}"><path d="${d}" clip-rule="evenodd"/></clipPath>`;
   s += `<path d="${d}" fill="${pal.grass}" fill-rule="evenodd"/>`;
   s += `<g clip-path="url(#${c})">`;
-  // darker inner rim along the edge, then light patches
-  s += `<path d="${d}" fill="none" stroke="${pal.grassDark}" stroke-width="4" opacity="0.45"/>`;
-  // big soft tonal regions first, then the small light patches
-  s += scatter(R, rings, 1 / 5200, (x, y) => `<path d="${blob(R, x, y, R.range(26, 46))}" fill="${R() < 0.5 ? pal.grassLight : pal.grassDark}" opacity="0.28"/>`);
-  s += scatter(R, rings, 1 / 1500, (x, y) => `<path d="${blob(R, x, y, R.range(8, 20))}" fill="${pal.grassLight}"/>`);
-  s += scatter(R, rings, 1 / 2600, (x, y) => `<path d="${blob(R, x, y, R.range(6, 13))}" fill="${pal.grassDark}" opacity="0.55"/>`);
-  // tufts: little V strokes, dark with a light blade beside
-  s += scatter(R, rings, 1 / 120, (x, y) => {
-    const h = R.range(2.2, 4.2), c = R() < 0.7 ? pal.grassDark : '#cbe668';
-    return `<path d="M${f(x)},${f(y)}q${f(-0.6)},${f(-h * 0.5)} ${f(-1.8)},${f(-h)}M${f(x)},${f(y)}q${f(0.1)},${f(-h * 0.6)} ${f(0.3)},${f(-h * 1.2)}M${f(x)},${f(y)}q${f(0.8)},${f(-h * 0.4)} ${f(2)},${f(-h * 0.85)}" stroke="${c}" stroke-width="0.85" fill="none" stroke-linecap="round"/>`;
-  });
-  // a few wild flowers and clover dots
+  // broad quiet turf: a handful of large connected lighter areas, flat
+  s += scatter(R, rings, 1 / 9000, (x, y) => `<path d="${blob(R, x, y, R.range(28, 48))}" fill="${pal.grassLight}"/>`);
+  s += scatter(R, rings, 1 / 14000, (x, y) => `<path d="${blob(R, x, y, R.range(16, 26))}" fill="${pal.grassDark}" opacity="0.35"/>`);
+  // tufts in small clumps rather than an even sprinkle
+  const tuft = (x, y) => {
+    const h = R.range(2.4, 4), c = R() < 0.75 ? pal.grassDark : '#cbe668';
+    return `<path d="M${f(x)},${f(y)}q${f(-0.6)},${f(-h * 0.5)} ${f(-1.8)},${f(-h)}M${f(x)},${f(y)}q${f(0.1)},${f(-h * 0.6)} ${f(0.3)},${f(-h * 1.2)}M${f(x)},${f(y)}q${f(0.8)},${f(-h * 0.4)} ${f(2)},${f(-h * 0.85)}" stroke="${c}" stroke-width="0.9" fill="none" stroke-linecap="round"/>`;
+  };
   s += scatter(R, rings, 1 / 2600, (x, y) => {
-    const c = R.pick(['#ffffff', '#f6d94a', '#ffffff', '#f3a6c0']);
-    return [0, 1, 2].map((k) => circle([x + k * 2.2 - 2, y + (k % 2) * 1.2], 0.9, c, `stroke="#5c7a2a" stroke-width="0.3"`)).join('');
+    let t = '';
+    for (let k = 0, n = 3 + Math.floor(R() * 4); k < n; k++) t += tuft(x + R.range(-7, 7), y + R.range(-3.5, 3.5));
+    return t;
+  });
+  // flowers only in a few clumps
+  s += scatter(R, rings, 1 / 22000, (x, y) => {
+    const c = R.pick(['#ffffff', '#f6d94a', '#ffffff']);
+    let t = '';
+    for (let k = 0; k < 6; k++) t += circle([x + R.range(-6, 6), y + R.range(-3, 3)], 1, c, `stroke="#5c7a2a" stroke-width="0.3"`);
+    return t;
   });
   s += '</g>';
   s += `<path d="${d}" fill="none" stroke="${pal.grassEdge}" stroke-width="1.3" stroke-linejoin="round"/>`;
@@ -110,11 +118,10 @@ export function road({ rings, seed = 23, pal = GROUND }) {
   let s = `<clipPath id="${c}"><path d="${d}" clip-rule="evenodd"/></clipPath>`;
   s += `<path d="${d}" fill="${pal.road}" fill-rule="evenodd"/>`;
   s += `<g clip-path="url(#${c})">`;
-  s += `<path d="${d}" fill="none" stroke="${pal.roadDot}" stroke-width="5" opacity="0.6"/>`;
-  s += scatter(R, rings, 1 / 90, (x, y) => circle([x, y], R.range(0.4, 0.8), pal.roadDot));
-  s += scatter(R, rings, 1 / 1800, (x, y) => ellipse([x, y], R.range(1.2, 2), R.range(0.8, 1.1), '#c8bca9', `stroke="${INK}" stroke-width="0.45"`));
+  s += scatter(R, rings, 1 / 500, (x, y) => circle([x, y], R.range(0.5, 0.8), pal.roadDot));
+  s += scatter(R, rings, 1 / 5000, (x, y) => ellipse([x, y], R.range(1.2, 2), R.range(0.8, 1.1), '#c8bca9', `stroke="${INK}" stroke-width="0.45"`));
   s += '</g>';
-  s += `<path d="${d}" fill="none" stroke="${pal.roadEdge}" stroke-width="1.1" stroke-linejoin="round"/>`;
+  s += `<path d="${d}" fill="none" stroke="${pal.roadEdge}" stroke-width="0.9" stroke-linejoin="round" opacity="0.7"/>`;
   return s;
 }
 

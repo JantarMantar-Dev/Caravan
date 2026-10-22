@@ -4,12 +4,12 @@
 //   field  R: signed distance to the shoreline (+ water, - land), tile px
 //          G: distance to anything standing in the water (rocks, piles)
 //          B: the shore distance heavily smoothed, for the swell crests
-//   look   depth colour (turquoise shallows to deep blue), drifting ripple
-//          strokes, glints
-//   waves  swell lines roll in following the shore, steepen, break into a
-//          foam lip and the swash slides up the sand, then drains back
-//          leaving wet sand that dries; a smaller second wave between
-//   rocks  a foam collar, rings spreading out, and a splash as a swell passes
+//   look   flat cyan with one hard-edged shallow band and a few short
+//          strokes in open water: no gradients, no glints
+//   waves  a bold broken surf band along the coast, a thin arc rolling in
+//          behind it, a flat swash sheet on the sand inside a hard-edged
+//          wet band
+//   rocks  small arcs on the side facing the viewer only
 import * as THREE from 'three';
 
 export const SWELL_PERIOD = 4.2, RING_PERIOD = 2.6;
@@ -177,95 +177,73 @@ export function waterMesh(hex, ox, oy, field, w, h) {
       float band(float d, float w) { float aa = fwidth(d) * 0.75 + 0.02; return 1.0 - smoothstep(w - aa, w + aa, abs(d)); }
       float ease(float x) { return x * x * (3.0 - 2.0 * x); }
 
-      const vec3 DEEP = vec3(0.035, 0.50, 0.82);
-      const vec3 MID = vec3(0.07, 0.66, 0.91);
-      const vec3 SHALLOW = vec3(0.33, 0.82, 0.94);
-      const vec3 FOAM = vec3(0.97, 0.995, 1.0);
-      const vec3 FILM = vec3(0.62, 0.90, 0.96);
+      const vec3 BASE = vec3(0.12, 0.68, 0.90);
+      const vec3 SHALLOW = vec3(0.38, 0.83, 0.95);
+      const vec3 FOAM = vec3(0.98, 1.0, 1.0);
+      const vec3 FILM = vec3(0.60, 0.89, 0.96);
+      // a hard-edged band: 1 inside |d| < w, crisp anti-aliased edge
+      float hard(float d, float w) { float aa = fwidth(d) * 0.6 + 0.01; return 1.0 - smoothstep(w - aa, w + aa, abs(d)); }
+      float cut(float x, float e) { float aa = fwidth(x) * 0.6 + 0.005; return smoothstep(e - aa, e + aa, x); }
 
       void main() {
         vec2 px = vPx;
         vec4 F = texture2D(uField, px / uTile.zw);
         float sd = F.r;                           // + water, - land, tile px
         float ds = F.g;
-        float sw = max(F.b, sd);                  // swell distance: smooth offshore, exact at the beach
+        float sw = max(F.b, sd);
         float t = uTime * uLive;
+        // slow wobble along the coast so bands are authored, not ruler-straight
+        float wob = snoise(px * 0.03) - 0.5;
 
-        // ---- open water
-        vec3 col = mix(SHALLOW, MID, smoothstep(1.0, 20.0, sd));
-        col = mix(col, DEEP, smoothstep(24.0, 85.0, sd));
-        // slow light/dark drift so the surface is never static
-        float drift = snoise(px * vec2(0.018, 0.03) + vec2(t * 0.05, -t * 0.03));
-        col *= 0.95 + 0.1 * drift;
-        // ripple strokes: short light dashes drifting along
-        float n = snoise(px * vec2(0.03, 0.05) + vec2(t * 0.06, t * 0.02));
-        float rip = band(fract(px.y * 0.09 + n * 3.0 + t * 0.12) - 0.5, 0.045);
-        rip *= smoothstep(0.55, 0.75, snoise(px * vec2(0.09, 0.2) + vec2(-t * 0.25, 0.0)));
-        rip *= smoothstep(4.0, 14.0, sd) * smoothstep(3.0, 9.0, ds);
-        col = mix(col, vec3(0.62, 0.89, 0.98), rip * 0.55);
+        // ---- open water: one flat cyan, one hard-edged shallow band
+        vec3 col = mix(SHALLOW, BASE, cut(sd, 9.0 + 6.0 * wob));
 
-        float foam = 0.0, film = 0.0, wet = 0.0;
-        // ---- swell: two waves per period, the second smaller
-        for (int k = 0; k < 2; k++) {
-          float kk = float(k);
-          float p = fract(t / ${SWELL_PERIOD.toFixed(2)} + kk * 0.5);
-          float size = kk < 0.5 ? 1.0 : 0.62;
-          float reach = (6.0 + 7.0 * snoise(px * 0.035 + kk * 9.1)) * size;   // run-up, varies along the beach
-          if (p < 0.62) {
-            // approaching: a crest following the shore contour
-            float q = p / 0.62;
-            float c = 64.0 * pow(1.0 - q, 1.25);
-            float ahead = mix(sd, sw, smoothstep(2.0, 14.0, c)) - c;                      // < 0 shoreward of the crest
-            float body = smoothstep(-10.0, 0.0, ahead) * (1.0 - smoothstep(0.0, 0.6, ahead));
-            col = mix(col, vec3(0.55, 0.88, 0.98), body * (0.12 + 0.18 * q) * size * step(0.0, sd));
-            float dash = smoothstep(0.35, 0.62, snoise(vec2(px.x * 0.06 + kk * 7.0, px.y * 0.1) + vec2(t * 0.1, 0.0)) + q * 0.35);
-            foam = max(foam, band(ahead, 0.55 + 1.4 * q * q) * dash * smoothstep(0.25, 0.75, q) * step(0.0, sd) * size);
-            // breaking: a white burst along the waterline just before the swash
-            foam = max(foam, smoothstep(0.82, 1.0, q) * band(sd - 1.2, 1.6) * smoothstep(0.25, 0.55, 0.6 * snoise(px * 0.25 + t) + 0.4 * snoise(px * 0.45 - t)) * size);
-          } else {
-            // swash: the sheet slides up the sand, then drains back
-            float s = (p - 0.62) / 0.38;
-            float up = s < 0.32 ? 1.0 - pow(1.0 - s / 0.32, 2.2) : 1.0 - ease((s - 0.32) / 0.68);
-            float front = mix(-1.5, reach, up);
-            float x = -sd;                               // distance up the beach
-            float sheet = smoothstep(front + 0.6, front - 0.6, x) * step(-2.0, x);
-            film = max(film, sheet * mix(0.85, 0.45, smoothstep(0.0, max(front, 0.1), x)));
-            float lace = smoothstep(0.35, 0.65, 0.65 * snoise(px * vec2(0.3, 0.45) + vec2(kk * 3.0, t * 0.6)) + 0.35 * snoise(px * 0.45 - t * 0.4));
-            float lipW = s < 0.32 ? 1.25 : 0.7;
-            foam = max(foam, band(x - front + lipW * 0.6, lipW) * (s < 0.32 ? 1.0 : 0.65 * (1.0 - s)) * (0.55 + 0.45 * lace) * step(-1.0, x));
-            // bubbles left behind the lip
-            vec2 bc = floor(px / 2.2), bf = fract(px / 2.2) - 0.5;
-            float bub = step(0.8, hash(bc + kk * 5.0)) * (1.0 - smoothstep(0.18, 0.3, length(bf)));
-            foam = max(foam, bub * smoothstep(front - 4.0, front - 1.2, x) * sheet * 0.8);
-            // wet sand where the sheet has been, drying as it drains
-            wet = max(wet, smoothstep(reach + 0.8, reach - 0.8, x) * step(0.0, x) * (s < 0.32 ? s / 0.32 : 1.0 - (s - 0.32) / 0.68) * size);
-          }
-        }
-        wet = max(wet, smoothstep(3.0, 0.0, -sd) * 0.55);                   // the waterline is always damp
-
-        // ---- rocks and piles: collar, rings, splash when a swell passes
-        if (sd > -1.0 && ds > 0.05) {
-          float collar = band(ds - 1.1, 1.1) * smoothstep(0.25, 0.55, snoise(px * 0.35 + vec2(t * 0.8, 0.0)));
-          foam = max(foam, collar * 0.95);
-          for (int k = 0; k < 2; k++) {
-            float p = fract(t / ${RING_PERIOD.toFixed(2)} + float(k) * 0.5);
-            float r = 1.5 + 13.0 * p;
-            float dash = smoothstep(0.3, 0.55, snoise(px * 0.18 + float(k) * 13.0));
-            foam = max(foam, band(ds - r, 0.55 + 0.3 * (1.0 - p)) * dash * (1.0 - p) * step(ds, 24.0) * 0.9);
-          }
-          float pw = fract(t / ${SWELL_PERIOD.toFixed(2)});
-          float c = 64.0 * pow(1.0 - min(pw / 0.62, 1.0), 1.25);
-          float hit = exp(-pow((sd - c) / 7.0, 2.0)) * step(pw, 0.62);
-          foam = max(foam, band(ds - 2.0, 1.2 + 2.6 * hit) * hit * smoothstep(0.25, 0.5, snoise(px * 0.4 - t)));
-        }
-        // ---- glints in deep water
-        vec2 cell = floor(px / 26.0);
+        // a few open-water strokes: short flat dashes that come and go
+        vec2 cs = vec2(46.0, 26.0);
+        vec2 cell = floor((px + vec2(t * 1.5, 0.0)) / cs);
         float h = hash(cell);
-        vec2 gc = (cell + 0.25 + 0.5 * vec2(hash(cell + 3.1), hash(cell + 7.7))) * 26.0;
-        float tw = smoothstep(0.85, 1.0, sin(t * (0.9 + h) + h * 40.0));
-        vec2 q = abs(px - gc);
-        float glint = (1.0 - smoothstep(0.3, 1.0, q.y)) * (1.0 - smoothstep(1.0, 4.0, q.x)) + (1.0 - smoothstep(0.3, 0.9, q.x)) * (1.0 - smoothstep(0.6, 2.0, q.y));
-        foam = max(foam, glint * tw * step(0.6, h) * smoothstep(18.0, 30.0, sd) * smoothstep(10.0, 18.0, ds));
+        vec2 c0 = (cell + vec2(0.2 + 0.6 * hash(cell + 3.1), 0.3 + 0.4 * hash(cell + 7.7))) * cs - vec2(t * 1.5, 0.0);
+        vec2 dq = px - c0;
+        float len = 5.0 + 6.0 * hash(cell + 1.7);
+        float life = sin(t * 0.5 + h * 30.0);
+        float stroke = hard(dq.y + dq.x * dq.x * 0.03, 0.55) * (1.0 - cut(abs(dq.x), len * smoothstep(0.0, 1.0, life)));
+        stroke *= step(0.62, h) * cut(sd, 16.0) * cut(ds, 9.0);
+        col = mix(col, vec3(0.70, 0.93, 0.99), stroke);
+
+        float foam = 0.0, film = 0.0;
+        // ---- surf: a bold broken white band hugging the coast, its gaps
+        //      shifting slowly; a thinner arc rolling in behind it
+        float brk = snoise(vec2(px.x * 0.05 + px.y * 0.02, px.y * 0.05) + vec2(t * 0.08, -t * 0.05));
+        float swell = fract(t / ${SWELL_PERIOD.toFixed(2)});
+        float pulse = 0.5 + 0.5 * sin(swell * 6.2832);
+        foam = max(foam, hard(sd - 3.2, 2.8 + 0.9 * pulse) * cut(brk, 0.26));
+        float arc = mix(15.0, 4.0, swell);
+        foam = max(foam, hard(sw - arc, 0.7 + 0.5 * swell) * cut(brk + 0.25 * wob, 0.45) * (1.0 - smoothstep(0.75, 1.0, swell)) * smoothstep(0.0, 0.15, swell));
+
+        // ---- swash: a flat sheet slides up the sand and drains back
+        float s = fract(t / ${SWELL_PERIOD.toFixed(2)} + 0.15);
+        float up = s < 0.35 ? 1.0 - pow(1.0 - s / 0.35, 2.0) : 1.0 - ease((s - 0.35) / 0.65);
+        float reach = 5.0 + 3.0 * wob;
+        float x = -sd;                                     // distance up the beach
+        float front = mix(-1.0, reach, up);
+        float sheet = (1.0 - cut(x, front)) * cut(x, -1.0);
+        film = sheet * 0.75;
+        foam = max(foam, hard(x - front + 0.6, 0.65) * cut(x, -0.5) * (s < 0.35 ? 1.0 : 0.8 * (1.0 - s)) * cut(brk, 0.3));
+        // the wet sand: a hard boundary a little beyond the furthest reach
+        float wet = 1.0 - cut(x, reach + 1.6);
+
+        // ---- rocks and posts: small arcs on the side facing the viewer
+        if (sd > -1.0 && ds > 0.05 && ds < 14.0) {
+          vec2 e = vec2(1.0, 0.0) / uTile.zw;
+          float gy = texture2D(uField, px / uTile.zw + e.yx).g - texture2D(uField, px / uTile.zw - e.yx).g;
+          float gx = texture2D(uField, px / uTile.zw + e).g - texture2D(uField, px / uTile.zw - e).g;
+          vec2 g = normalize(vec2(gx, gy) + 1e-5);
+          float front = smoothstep(-0.1, 0.5, g.y + 0.25 * g.x);    // down and a little right
+          foam = max(foam, hard(ds - 0.9, 0.85) * front * cut(snoise(px * 0.3 + vec2(t * 0.4, 0.0)), 0.3));
+          float rp = fract(t / ${RING_PERIOD.toFixed(2)});
+          float r = 2.5 + 6.0 * rp;
+          foam = max(foam, hard(ds - r, 0.5) * front * smoothstep(0.6, 1.0, g.y) * (1.0 - rp) * step(0.1, rp));
+        }
 
         vec4 outc;
         if (sd >= 0.0) {
@@ -275,7 +253,7 @@ export function waterMesh(hex, ox, oy, field, w, h) {
           // on the sand: only the sheet, its foam and the wet patch
           float a = clamp(film, 0.0, 1.0);
           vec3 c = FILM * a;
-          float wa = clamp(wet, 0.0, 1.0) * 0.32 * (1.0 - a);
+          float wa = clamp(wet, 0.0, 1.0) * 0.26 * (1.0 - a);
           c += vec3(0.42, 0.30, 0.12) * wa;
           a += wa;
           float fa = clamp(foam, 0.0, 1.0);

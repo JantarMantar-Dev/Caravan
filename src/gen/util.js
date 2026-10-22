@@ -5,9 +5,12 @@
 // as vectors, so the lab can rasterise an asset at any resolution. Ink is the
 // ligne-claire outline of the reference art.
 
-export const INK = '#2a1d15';
-export const IW = 1.9;          // outer ink width, tile px
-export const IW2 = 1.05;        // inner detail lines
+// One contour system for every asset: a near-black ink, and three weights in
+// the ratio 1 : 0.65 : 0.4 (outer contour : structural inner line : texture).
+export const INK = '#1d1611';
+export const IW = 1.9;          // outer contour, tile px
+export const IW2 = 1.25;        // structural inner lines
+export const IW3 = 0.75;        // optional material texture
 
 export function rng(seed) {
   let a = (seed * 2654435761) >>> 0 || 1;
