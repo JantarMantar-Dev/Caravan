@@ -280,6 +280,7 @@ export function pixelWaterMesh(hex, ox, oy, field, w, h, cell) {
     uniforms: {
       uField: { value: field }, uTime: { value: 0 }, uOpacity: { value: 1 }, uDim: { value: 0 }, uFlash: { value: 0 }, uLive: { value: 1 },
       uTile: { value: new THREE.Vector4(ox, oy, w, h) }, uCell: { value: cell },
+      uHex: { value: hex.map(([x, y]) => new THREE.Vector2(x, y)) },
     },
     vertexShader: /* glsl */`
       uniform vec4 uTile;
@@ -291,6 +292,7 @@ export function pixelWaterMesh(hex, ox, oy, field, w, h, cell) {
     fragmentShader: /* glsl */`
       uniform sampler2D uField;
       uniform float uTime, uOpacity, uDim, uFlash, uLive, uCell;
+      uniform vec2 uHex[6];
       uniform vec4 uTile;
       varying vec2 vPx;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -298,40 +300,63 @@ export function pixelWaterMesh(hex, ox, oy, field, w, h, cell) {
       const vec3 SHALLOW = vec3(0.27, 0.58, 0.85);
       const vec3 LIGHT = vec3(0.47, 0.71, 0.92);
       const vec3 FOAM = vec3(0.86, 0.93, 0.98);
-      const vec3 WET = vec3(0.78, 0.66, 0.43);
+      const vec3 WET = vec3(0.70, 0.58, 0.38);
+      const vec3 FILM_P = vec3(0.55, 0.77, 0.93);
       void main() {
         vec2 c = floor(vPx / uCell);
         vec2 px = (c + 0.5) * uCell;
+        // whole art pixels only: a cell whose centre is outside the hex is not
+        // drawn, matching the ground planes, so no slivers show past the frame
+        float side = 0.0, edge = 1e9;
+        for (int k = 0; k < 6; k++) {
+          vec2 a = uHex[k], b = uHex[k == 5 ? 0 : k + 1];
+          float cr = (b.x - a.x) * (px.y - a.y) - (b.y - a.y) * (px.x - a.x);
+          if (k == 0) side = sign(cr);
+          else if (sign(cr) != side && cr != 0.0) discard;
+          edge = min(edge, abs(cr) / length(b - a));
+        }
         vec4 F = texture2D(uField, px / uTile.zw);
         float sd = F.r / uCell, ds = F.g / uCell;      // in art pixels
+        // land traced from the art stops a hair short of the hex edge: that is
+        // not water, so leave those cells to the ground planes
+        if (edge < uCell * 2.0 && sd < 2.5 && sd > -0.5) discard;
         float t = floor(uTime * uLive * 6.0) / 6.0;      // 6 frames a second
         float sw = fract(t / ${SWELL_PERIOD.toFixed(2)});
         vec3 col = WATER;
         float a = 1.0;
+        // breaks in the foam come in short runs along the coast, not single pixels
+        float run = hash(floor(c / vec2(4.0, 3.0)) + floor(t / 1.5) * 3.1);
+        float reach = sw < 0.5 ? sw * 2.0 : 2.0 - sw * 2.0;
         if (sd >= 0.0) {
           if (sd < 3.0) col = SHALLOW;
-          // shore foam: a broken one-pixel line that breathes with the swell
-          float reach = sw < 0.5 ? sw * 2.0 : 2.0 - sw * 2.0;
-          if (sd < 0.5 + reach * 1.2 && hash(c + floor(t * 0.5)) > 0.25) col = FOAM;
-          // a light line rolling in towards the beach
-          float arc = mix(6.0, 1.5, sw);
-          if (abs(sd - arc) < 0.5 && hash(vec2(floor(c.x / 3.0), c.y) + 7.0) > 0.35) col = LIGHT;
-          // open water: short light dashes that come and go
-          vec2 cell = floor((c + vec2(floor(t * 1.5), 0.0)) / vec2(9.0, 5.0));
+          // shore foam: a one-pixel line, two when the swell is up, in runs
+          if (sd < 1.0 && run > 0.2) col = FOAM;
+          else if (sd < 2.0 && reach > 0.55 && run > 0.45) col = FOAM;
+          // a light line rolling in towards the beach, also in runs
+          float arc = floor(mix(7.0, 2.0, sw));
+          if (floor(sd) == arc && sd > 3.0 && hash(floor(c / vec2(6.0, 4.0)) + 7.0) > 0.62) col = LIGHT;
+          // open water: short dashes, a long and a short one, drifting slowly
+          float drift = floor(t / 0.7);
+          vec2 g = c + vec2(drift, 0.0);
+          vec2 cell = floor(g / vec2(11.0, 6.0));
           float hh = hash(cell);
-          vec2 o = (c + vec2(floor(t * 1.5), 0.0)) - cell * vec2(9.0, 5.0);
-          if (sd > 5.0 && hh > 0.72 && o.y == 2.0 && o.x >= 2.0 && o.x <= 4.0 + floor(hh * 4.0) && sin(t * 0.8 + hh * 40.0) > -0.2) col = LIGHT;
-          // rocks and posts: a ring of foam pixels, front side only
-          if (ds > 0.01 && ds < 1.2 && hash(c + floor(t)) > 0.3) {
+          vec2 o = g - cell * vec2(11.0, 6.0);
+          float on = step(0.0, sin(t * 0.9 + hh * 40.0));
+          bool d1 = o.y == 2.0 && o.x >= 3.0 && o.x <= 5.0;
+          bool d2 = o.y == 3.0 && o.x >= 7.0 && o.x <= 8.0;
+          if (sd > 6.0 && ds > 3.0 && hh > 0.6 && on > 0.5 && (d1 || d2)) col = LIGHT;
+          // rocks and posts: foam pixels on the side facing the viewer
+          if (ds > 0.01 && ds < 1.2 && run > 0.25) {
             vec2 e = vec2(uCell, 0.0) / uTile.zw;
             float gy = texture2D(uField, px / uTile.zw + e.yx).g - texture2D(uField, px / uTile.zw - e.yx).g;
             if (gy > -0.2) col = FOAM;
           }
         } else {
-          // the beach: a damp row of sand, and the swash sliding up
+          // the beach: the swash slides up as one band, then a damp row
           float up = sw < 0.4 ? sw / 0.4 : 1.0 - (sw - 0.4) / 0.6;
-          if (-sd < up * 2.0 + 0.5) { col = FOAM; a = 1.0; }
-          else if (-sd < 3.0) { col = WET; a = 0.35; }
+          float x = -sd;
+          if (x < floor(up * 2.5) && up > 0.25) { col = x < floor(up * 2.5) - 1.0 ? FILM_P : FOAM; a = 1.0; }
+          else if (x < 2.0) { col = WET; a = 0.4; }
           else a = 0.0;
         }
         vec4 outc = vec4(col * a, a);

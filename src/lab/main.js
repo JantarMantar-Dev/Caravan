@@ -626,11 +626,11 @@ function frame(now) {
 // ---------- boot ----------
 buildTileChips();
 const start = params.get('tile') && LAYERS[params.get('tile')] ? params.get('tile') : (LAYERS.fish_1 ? 'fish_1' : TILE_NAMES[0]);
+if (params.has('pixel')) { state.version = 4; document.querySelectorAll('#version button').forEach((b) => b.classList.toggle('on', b.dataset.v === '4')); }
 showTile(start).then(() => {
   if (params.has('explode')) { state.explodeTo = 1; state.explode = 1; fit(); Object.assign(view, target); $('#explode').classList.add('on'); }
   if (params.has('v1')) $('#version button[data-v="1"]').click();
   if (params.has('v2')) $('#version button[data-v="2"]').click();
-  if (params.has('pixel')) $('#version button[data-v="4"]').click();
   if (params.has('t')) state.time = +params.get('t');
   if (params.has('still')) state.still = true;
   if (params.has('buildAt')) { startBuild(); for (let k = 0; k < +params.get('buildAt') * 60; k++) stepBuild(1 / 60); state.freeze = true; }

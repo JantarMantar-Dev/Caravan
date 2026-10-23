@@ -13,7 +13,7 @@ export const PAL = {
   sand: '#e8d293', sandDark: '#d2b779', sandLight: '#f2e2ae',
   road: '#e0c264', roadDark: '#c9a64c',
   pine: ['#163d4b', '#1e5462', '#2a6d6c', '#3f8a73'],
-  leaf: ['#2b6a2e', '#3c8834', '#59a93b', '#86c64c'],
+  leaf: ['#1d5636', '#2a7539', '#3f9341', '#73b84d'],
   stone: ['#4f515e', '#72757f', '#999ba3', '#c3c4c9'],
   wood: ['#4f3220', '#6f4729', '#93623a', '#b6854f'],
   roof: ['#7d2c22', '#a8402c', '#c8573a'],
@@ -21,7 +21,9 @@ export const PAL = {
   fish: ['#4d6987', '#9bb3cc', '#dbe6ef'],
   trunk: ['#4c311d', '#6e4628'],
   awning: ['#ece3cf', '#c95b3c'],
-  pane: '#2e3a4c', door: '#6a3f22', net: '#c8b97c', white: '#f4f1e6', shadow: [20, 50, 10, 70],
+  pane: '#2e3a4c', door: '#6a3f22', net: '#c8b97c', white: '#f4f1e6',
+  // one shadow for everything, on any ground: a cool translucent dark
+  shadow: [16, 28, 46, 78],
 };
 
 const hex2 = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), 255];
@@ -121,26 +123,32 @@ class Pix {
 }
 
 // ------------------------------------------------------------- sprites
-// a leafy crown: lobes shaded by their own normal against the upper-left
-// light, the topmost lobe at each pixel wins, so lobes separate naturally
+// a leafy crown in clusters, the usual pixel-art way: each cluster has a
+// lit cap on its upper left, a dark underside, mid green between; clusters
+// on the shaded right sit one tone darker. Small rim lobes break the outline
+// into leafy bumps. The topmost cluster at a pixel wins.
 const LOBES = {
-  broad: [[0, -0.55, 0.5], [-0.45, -0.1, 0.48], [0.45, -0.12, 0.48], [0, 0.05, 0.55], [-0.3, 0.35, 0.42], [0.32, 0.34, 0.42]],
-  spread: [[-0.25, -0.45, 0.45], [0.35, -0.4, 0.4], [-0.65, 0.05, 0.4], [0.62, 0.02, 0.4], [0, 0.0, 0.5], [-0.3, 0.32, 0.4], [0.35, 0.3, 0.4]],
-  sapling: [[0, -0.42, 0.5], [-0.32, 0.05, 0.45], [0.34, 0.04, 0.45], [0, 0.25, 0.42]],
-  bush: [[-0.45, 0, 0.5], [0.45, -0.02, 0.5], [0, -0.3, 0.52], [0, 0.12, 0.5]],
+  broad: [[0, -0.55, 0.42], [-0.42, -0.2, 0.4], [0.42, -0.24, 0.4], [-0.5, 0.25, 0.36], [0.48, 0.22, 0.36], [0, 0.1, 0.42], [0, 0.42, 0.34],
+    [-0.8, 0.05, 0.16], [0.82, 0.0, 0.16], [-0.3, -0.78, 0.16], [0.36, -0.7, 0.16]],
+  spread: [[-0.25, -0.45, 0.4], [0.35, -0.4, 0.38], [-0.68, 0.0, 0.36], [0.66, -0.02, 0.36], [0, -0.05, 0.42], [-0.32, 0.32, 0.36], [0.36, 0.3, 0.36],
+    [-0.98, 0.15, 0.15], [0.98, 0.12, 0.14], [0.0, -0.72, 0.16]],
+  sapling: [[0, -0.42, 0.44], [-0.36, 0.05, 0.4], [0.38, 0.04, 0.4], [0, 0.28, 0.38], [-0.62, -0.18, 0.14], [0.6, -0.2, 0.14]],
+  bush: [[-0.45, 0, 0.46], [0.45, -0.02, 0.46], [0, -0.32, 0.48], [0, 0.12, 0.46]],
 };
 function crown(px, cx, cy, r, form, flip, pal = PAL.leaf) {
-  const L = LOBES[form].map(([u, v, q]) => [cx + (flip ? -u : u) * r, cy + v * r, q * r]);
+  // rim lobes smaller than a pixel and a half only make single-pixel spikes
+  const L = LOBES[form].map(([u, v, q]) => [cx + (flip ? -u : u) * r, cy + v * r, q * r]).filter((l) => l[2] >= P * 1.6);
   const tone = (i, j) => {
     const x = (i + 0.5) * P, y = (j + 0.5) * P;
     for (let k = L.length - 1; k >= 0; k--) {
       const [lx, ly, q] = L[k];
       const nx = (x - lx) / q, ny = (y - ly) / q;
       if (nx * nx + ny * ny > 1) continue;
-      // mostly the crown's own light, a little of the lobe's, so lobes read
-      // without banding every one
-      const lit = -0.3 * nx - 0.45 * ny - 0.65 * ((y - cy) / r) - 0.4 * ((x - cx) / r);
-      return lit > 0.6 ? pal[3] : lit > 0.05 ? pal[2] : lit > -0.55 ? pal[1] : pal[0];
+      let t = ny > 0.5 ? 0 : (ny < -0.35 && nx < 0.35) ? 2 : 1;      // underside, cap, body
+      if (ny < -0.62 && nx < -0.05 && nx > -0.6) t = 3;               // brightest leaves
+      if (lx > cx + r * 0.25 && t > 0) t -= 1;                       // the shaded side
+      if (ly < cy - r * 0.3 && t < 3 && ny < 0.2) t += 1;              // the top catches more sun
+      return pal[t];
     }
     return null;
   };
@@ -149,7 +157,7 @@ function crown(px, cx, cy, r, form, flip, pal = PAL.leaf) {
 function trunk(px, x, y, top, w) {
   px.rect(x - w / 2, top, x + w / 2, y, (i) => ((i + 0.5) * P < x ? PAL.trunk[1] : PAL.trunk[0]));
 }
-function groundShadow(px, x, y, rx, ry) { px.ellipse(x, y, rx, ry, PAL.shadow); }
+function groundShadow(px, x, y, rx, ry) { px.ellipse(x, y, rx, ry, (i, j) => (px.alpha(i, j) === 255 ? null : PAL.shadow)); }
 
 function tree(px, { x, y, r = 30, form = 'broad', flip = false }) {
   const h = r * ({ broad: 1.15, spread: 1.0, sapling: 1.2 }[form] ?? 1.15);
@@ -187,19 +195,30 @@ function pine(px, { x, y, w = 50, h = 84, tiers = 4, seed = 1 }) {
   groundShadow(px, x + w * 0.2, y + 1, w * 0.45, w * 0.13);
 }
 
-// rocks: angular chunks, a lit left face and a dark right face
+// rocks: low-poly chunks. An irregular outer ring, a smaller top plane
+// pushed up-left inside it, and the band between cut into facets, each lit
+// by how its edge faces the upper-left light.
 function boulder(R, px, x, y, bw, bh, wet) {
-  const s = R() < 0.6 ? 1 : -1;
-  const peak = [x + s * bw * R.range(0, 0.15), y - bh];
-  const pts = [[x - bw / 2, y], [x - bw * R.range(0.32, 0.45), y - bh * R.range(0.55, 0.8)], peak, [x + bw * R.range(0.3, 0.42), y - bh * R.range(0.45, 0.75)], [x + bw / 2, y]];
-  const ridge = (yy) => peak[0] + (x + bw * 0.08 - peak[0]) * ((yy - peak[1]) / bh);
-  const pal = PAL.stone;
-  px.poly(pts, (i, j) => {
-    const xx = (i + 0.5) * P, yy = (j + 0.5) * P;
-    if (wet && yy > y - bh * 0.12) return '#4a6170';
-    if (xx > ridge(yy)) return yy > y - bh * 0.35 ? pal[0] : pal[1];
-    return yy < peak[1] + bh * 0.35 ? pal[3] : pal[2];
-  });
+  const k = 6 + Math.floor(R() * 2), cy = y - bh * 0.5, a0 = R.range(0, 0.6);
+  const V = [];
+  for (let i = 0; i < k; i++) {
+    const a = a0 + (i / k) * Math.PI * 2, j = R.range(0.82, 1.06);
+    V.push([x + Math.cos(a) * bw * 0.5 * j, Math.min(y, cy + Math.sin(a) * bh * 0.62 * j)]);
+  }
+  const C = [x - bw * 0.06, cy - bh * 0.12];
+  const W = V.map(([vx, vy]) => [C[0] + (vx - C[0]) * 0.5 - bw * 0.04, C[1] + (vy - C[1]) * 0.45 - bh * 0.1]);
+  const pal = PAL.stone, L = [-0.6, -0.8];
+  for (let i = 0; i < k; i++) {
+    const A = V[i], B = V[(i + 1) % k];
+    let nx = B[1] - A[1], ny = -(B[0] - A[0]);
+    const n = Math.hypot(nx, ny) || 1;
+    nx /= n; ny /= n;
+    if (nx * (A[0] - x) + ny * (A[1] - cy) < 0) { nx = -nx; ny = -ny; }   // outward
+    const d = nx * L[0] + ny * L[1];
+    px.poly([A, B, W[(i + 1) % k], W[i]], d > 0.5 ? pal[3] : d > 0.0 ? pal[2] : d > -0.8 ? pal[1] : pal[0]);
+  }
+  px.poly(W, pal[2]);
+  if (wet) px.poly(V, (i, j) => ((j + 0.5) * P > y - Math.max(P, bh * 0.14) ? '#45606f' : null));
 }
 function rock(px, { x, y, w = 40, h = 30, n = 1, seed = 1, wet = false }) {
   const R = rng(seed);
@@ -215,29 +234,40 @@ function rock(px, { x, y, w = 40, h = 30, n = 1, seed = 1, wet = false }) {
 // built things share the vector generators' projection
 const at = (proj, o) => iso(proj?.au, proj?.av).at(o);
 const U_ = (proj) => iso(proj?.au, proj?.av).U;
+// screen pixel -> (u, v) on the plane z of a projection p: lets a face be
+// patterned in its own coordinates (plank seams, fish rows) with clean,
+// regular pixel rhythm
+function uvOf(proj, p, z = 0) {
+  const { U, V } = iso(proj?.au, proj?.av), o = p(0, 0, z), det = U[0] * V[1] - V[0] * U[1];
+  return (i, j) => {
+    const x = (i + 0.5) * P - o[0], y = (j + 0.5) * P - o[1];
+    return [(x * V[1] - V[0] * y) / det, (U[0] * y - x * U[1]) / det];
+  };
+}
+// cast shadow: fills only where nothing is drawn yet, after the outline
+function castShadow(px, pts) { px.poly(pts, (i, j) => (px.alpha(i, j) === 255 ? null : PAL.shadow)); }
 function post(px, p, u, v, z0, z1, r) {
   const b = p(u, v, z0), t = p(u, v, z1);
   px.rect(b[0] - r, t[1], b[0] + r, b[1], (i) => ((i + 0.5) * P < b[0] - r * 0.1 ? PAL.wood[2] : PAL.wood[1]));
   px.rect(t[0] - r, t[1] - P * 0.6, t[0] + r, t[1] + P * 0.4, PAL.wood[3]);
 }
 
-function dock(px, { origin, len = 270, depth = 54, height = 32, thick = 9, plank = 12, gap = 46, postUp = 12, postR = 6.8, proj }) {
+function dock(px, { origin, len = 270, depth = 54, height = 32, thick = 9, gap = 46, postUp = 12, postR = 6.8, proj }) {
   const p = at(proj, origin);
   const n = Math.max(2, Math.round((len - 12) / gap) + 1);
   const us = Array.from({ length: n }, (_, i) => 6 + ((len - 12) * i) / (n - 1));
   for (const u of us) post(px, p, u, depth - 4, -height, -thick, postR * 0.9);
-  // deck: planks across, alternating tone, a dark seam between boards
-  let k = 0;
-  for (let u = 0; u < len - 0.5; u += plank, k++) {
-    const u1 = Math.min(len, u + plank);
-    px.poly([p(u, 0, 0), p(u1, 0, 0), p(u1, depth, 0), p(u, depth, 0)], k % 3 === 1 ? PAL.wood[2] : PAL.wood[3]);
-    if (k % 2 === 0 && u > 0) px.line(p(u, 0.5, 0), p(u, depth - 1, 0), PAL.wood[1]);
-  }
+  // deck: boards four art pixels wide, one connected dark seam between each,
+  // every fifth board a shade darker so the deck is not a flat sheet
+  const pl = P * 4, uv = uvOf(proj, p);
+  px.poly([p(0, 0, 0), p(len, 0, 0), p(len, depth, 0), p(0, depth, 0)], (i, j) => (Math.floor(uv(i, j)[0] / pl) % 5 === 3 ? PAL.wood[2] : PAL.wood[3]));
+  for (let u = pl; u < len - 2; u += pl) px.line(p(u, 1, 0), p(u, depth - 1, 0), PAL.wood[1]);
   px.poly([p(0, 0, 0), p(len, 0, 0), p(len, 0, -thick), p(0, 0, -thick)], PAL.wood[1]);
   px.poly([p(len, 0, 0), p(len, depth, 0), p(len, depth, -thick), p(len, 0, -thick)], PAL.wood[0]);
   for (const [i, u] of us.entries()) post(px, p, u, -1.5, -height, postUp - (i % 3) * 2, postR);
   post(px, p, len + 1.5, depth - 6, -height, postUp, postR);
   px.outline();
+  castShadow(px, [p(0, 0, -height), p(len, 0, -height), p(len, depth, -height), p(0, depth, -height)].map(([a, b]) => [a + 9, b + 4]));
 }
 
 function house(px, { corner, w = 74, d = 50, h = 44, rise = 30, over = 5, chimney = 0.22, proj }) {
@@ -250,20 +280,36 @@ function house(px, { corner, w = 74, d = 50, h = 44, rise = 30, over = 5, chimne
   px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, 5), p(0, 0, 5)], PAL.wall[2]);
   px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, 5), p(w, 0, 5)], PAL.wall[2]);
   // windows and door
-  for (const t of [0.16, 0.38]) px.poly([p(w * t - 5, 0, 18), p(w * t + 5, 0, 18), p(w * t + 5, 0, 31), p(w * t - 5, 0, 31)], PAL.pane);
-  px.poly([p(w * 0.72 - 6, 0, 0), p(w * 0.72 + 6, 0, 0), p(w * 0.72 + 6, 0, 24), p(w * 0.72 - 6, 0, 24)], PAL.door);
-  px.poly([p(w, d * 0.5 - 4, 16), p(w, d * 0.5 + 4, 16), p(w, d * 0.5 + 4, 27), p(w, d * 0.5 - 4, 27)], PAL.pane);
+  // windows: a wooden frame, a dark pane, one glint pixel in the top-left
+  const win = (q) => {
+    px.poly([q(-7, 16), q(7, 16), q(7, 33), q(-7, 33)], PAL.wood[2]);
+    px.poly([q(-4, 19), q(4, 19), q(4, 30), q(-4, 30)], PAL.pane);
+    const g = q(-2.5, 28.5);
+    px.set(Math.floor(g[0] / P), Math.floor(g[1] / P), '#8fa6bd');
+  };
+  for (const t of [0.16, 0.4]) win((s2, z) => p(w * t + s2, 0, z));
+  win((s2, z) => p(w, d * 0.5 + s2, z - 2));
+  // door: a darker frame, planks, a brass knob
+  const du = w * 0.72;
+  px.poly([p(du - 8, 0, 0), p(du + 8, 0, 0), p(du + 8, 0, 27), p(du - 8, 0, 27)], PAL.wood[0]);
+  px.poly([p(du - 5, 0, 0), p(du + 5, 0, 0), p(du + 5, 0, 24), p(du - 5, 0, 24)], PAL.door);
+  const kn = p(du + 2.5, 0, 11);
+  px.set(Math.floor(kn[0] / P), Math.floor(kn[1] / P), '#e0b84a');
   // roof: courses of light and mid, a dark eave
   const S = (s, t) => p(s, -over + (half + over) * t, ze + (top - ze) * t);
   const rows = 5;
   for (let r = 0; r < rows; r++) px.poly([S(-over, r / rows), S(w + over, r / rows), S(w + over, (r + 1) / rows), S(-over, (r + 1) / rows)], r % 2 ? PAL.roof[1] : PAL.roof[2]);
   px.poly([S(-over, 0), S(w + over, 0), S(w + over, 0.08), S(-over, 0.08)], PAL.roof[0]);
   px.poly([p(w + over, -over, ze), p(w + over, half, top), p(w + over, half, top - 4), p(w + over, -over, ze - 4)], PAL.roof[0]);
+  px.line(p(-over, half, top), p(w + over, half, top), PAL.roof[0]);
   if (chimney) {
     const cu = w * chimney, cv = half * 0.35;
     const zr = ze + (top - ze) * ((cv + over) / (half + over));
-    px.poly([p(cu, cv, zr), p(cu + 11, cv, zr), p(cu + 11, cv, top + 6), p(cu, cv, top + 6)], PAL.stone[2]);
+    px.poly([p(cu, cv, zr), p(cu + 11, cv, zr), p(cu + 11, cv, top + 6), p(cu, cv, top + 6)], PAL.stone[3]);
     px.poly([p(cu + 11, cv, zr), p(cu + 11, cv + 10, zr), p(cu + 11, cv + 10, top + 6), p(cu + 11, cv, top + 6)], PAL.stone[1]);
+    // a darker cap with the flue showing
+    px.poly([p(cu - 2, cv - 2, top + 6), p(cu + 13, cv - 2, top + 6), p(cu + 13, cv + 12, top + 6), p(cu - 2, cv + 12, top + 6)], PAL.stone[1]);
+    px.poly([p(cu + 2, cv + 2, top + 6), p(cu + 9, cv + 2, top + 6), p(cu + 9, cv + 8, top + 6), p(cu + 2, cv + 8, top + 6)], PAL.stone[0]);
   }
   px.outline();
   px.poly([p(w, 0, 0), p(w + 16, 6, 0), p(w + 16, d + 6, 0), p(w, d, 0)].map(([a, b]) => [a + P, b]), (i, j) => (px.alpha(i, j) === 255 ? null : PAL.shadow));
@@ -274,26 +320,42 @@ function box(px, p, w, d, h, top) {
   px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, h), p(0, 0, h)], PAL.wood[2]);
   px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, h), p(w, 0, h)], PAL.wood[1]);
 }
+// crates: lit front, shaded side, a light rim round the top; fish lie in
+// rows along the crate, dark back, pale belly, a dark tail pixel
 function crate(px, { corner, w = 40, d = 26, h = 18, fill = 'fish', proj }) {
   const U = U_(proj);
   const p = at(proj, [corner[0] - w * U[0], corner[1] - w * U[1]]);
   box(px, p, w, d, h, fill === 'lid' ? PAL.wood[3] : PAL.wood[0]);
-  if (fill === 'fish') {
-    px.poly([p(3, 3, h), p(w - 3, 3, h), p(w - 3, d - 3, h), p(3, d - 3, h)], PAL.fish[2]);
-    for (let s = 5; s < w - 10; s += 11) for (const v of [d * 0.35, d * 0.7]) { px.line(p(s, v, h), p(s + 8, v, h), PAL.fish[1]); px.set(Math.floor(p(s, v, h)[0] / P), Math.floor(p(s, v, h)[1] / P) - 1, PAL.fish[0]); }
+  const uv = uvOf(proj, p, h);
+  if (fill === 'lid') px.poly([p(0, 0, h), p(w, 0, h), p(w, d, h), p(0, d, h)], (i, j) => (Math.floor(uv(i, j)[0] / 9) % 2 && uv(i, j)[0] % 9 < 2 ? PAL.wood[2] : null));
+  else {
+    const r = 3.2;
+    px.poly([p(r, r, h), p(w - r, r, h), p(w - r, d - r, h), p(r, d - r, h)], (i, j) => {
+      if (fill !== 'fish') return PAL.wood[0];
+      const [u, v] = uv(i, j);
+      const row = Math.floor((v - r) / 7), fv = (v - r) / 7 - row, fu = ((u - r + row * 5) % 15) / 15;
+      if (fu > 0.86) return PAL.fish[0];                     // tail
+      if (fv < 0.42) return PAL.fish[0];                     // back
+      return fv < 0.8 ? PAL.fish[1] : PAL.fish[2];
+    });
+    // the rim: board tops along the near edges, light
+    px.poly([p(0, 0, h), p(w, 0, h), p(w - r, r, h), p(r, r, h)], PAL.wood[3]);
+    px.poly([p(w, 0, h), p(w, d, h), p(w - r, d - r, h), p(w - r, r, h)], PAL.wood[2]);
   }
-  px.line(p(0, 0, h / 2), p(w, 0, h / 2), PAL.wood[1]);
+  px.line(p(1, 0, h * 0.45), p(w - 1, 0, h * 0.45), PAL.wood[1]);
   px.outline();
+  castShadow(px, [p(w, 0, 0), p(w + 7, 3, 0), p(w + 7, d + 3, 0), p(w, d, 0)].map(([a, b]) => [a + 2, b + 2]));
 }
 function barrel(px, { x, y, r = 9, h = 20 }) {
-  px.rect(x - r, y - h, x + r, y, (i, j) => {
-    const yy = (j + 0.5) * P, t = (y - yy) / h;
-    if (Math.abs(t - 0.22) < 0.07 || Math.abs(t - 0.78) < 0.07) return PAL.stone[0];
-    return (i + 0.5) * P < x ? PAL.wood[2] : PAL.wood[1];
+  // staves bulge one pixel at the middle; two dark hoops; lit left half
+  px.poly([[x - r, y - h], [x + r, y - h], [x + r + P * 0.6, y - h / 2], [x + r, y], [x - r, y], [x - r - P * 0.6, y - h / 2]], (i, j) => {
+    const yy = (j + 0.5) * P, t = (y - yy) / h, xx = (i + 0.5) * P;
+    if (Math.abs(t - 0.22) < 0.08 || Math.abs(t - 0.74) < 0.08) return xx < x ? PAL.stone[1] : PAL.stone[0];
+    return xx < x - r * 0.2 ? PAL.wood[3] : xx < x + r * 0.4 ? PAL.wood[2] : PAL.wood[1];
   });
-  px.ellipse(x, y - h, r, r * 0.45, PAL.wood[3]);
+  px.ellipse(x, y - h, r, Math.max(P * 0.8, r * 0.45), (i) => ((i + 0.5) * P < x + r * 0.5 ? PAL.wood[3] : PAL.wood[2]));
   px.outline();
-  groundShadow(px, x + r * 0.5, y + 1, r * 1.2, r * 0.4);
+  groundShadow(px, x + r * 0.6, y + 1, r * 1.1, r * 0.4);
 }
 function stall(px, { corner, w = 44, d = 22, h = 13, proj }) {
   const U = U_(proj);
@@ -315,13 +377,19 @@ function stall(px, { corner, w = 44, d = 22, h = 13, proj }) {
 function fence(px, { start, len = 40, dir = 'v', posts = 4, h = 17, proj }) {
   const p = at(proj, start);
   const q = dir === 'v' ? (s, z) => p(0, s, z) : (s, z) => p(s, 0, z);
-  for (const z of [h * 0.72, h * 0.32]) { px.line(q(-2, z), q(len + 2, z), PAL.wood[2]); px.line(q(-2, z - 3), q(len + 2, z - 3), PAL.wood[1]); }
-  for (let k = 0; k < posts; k++) { const s = (len * k) / (posts - 1); const b = q(s, 0), t = q(s, h); px.rect(b[0] - 3, t[1], b[0] + 3, b[1], PAL.wood[2]); }
+  // two rails, one pixel each; posts two pixels wide with a lit top
+  for (const z of [h * 0.72, h * 0.32]) px.line(q(-2, z), q(len + 2, z), PAL.wood[3]);
+  for (let k = 0; k < posts; k++) {
+    const s2 = (len * k) / (posts - 1), b = q(s2, 0), t = q(s2, h + 2);
+    px.rect(b[0] - 4, t[1], b[0] + 4, b[1], (i) => ((i + 0.5) * P < b[0] ? PAL.wood[2] : PAL.wood[1]));
+    px.rect(b[0] - 4, t[1], b[0] + 4, t[1] + 3, PAL.wood[3]);
+  }
   px.outline();
+  castShadow(px, [q(0, 0), q(len, 0), [q(len, 0)[0] + 8, q(len, 0)[1] + 3], [q(0, 0)[0] + 8, q(0, 0)[1] + 3]]);
 }
 function rack(px, { start, len = 96, spread = 13, h = 68, fish = 6, proj }) {
   const p = at(proj, start);
-  const leg = (a, b) => { px.line(a, b, PAL.wood[2]); px.line([a[0] + P, a[1]], [b[0] + P, b[1]], PAL.wood[1]); };
+  const leg = (a, b) => { px.line(a, b, PAL.wood[2]); };
   leg(p(-spread, len, 0), p(0, len, h)); leg(p(spread, len, 0), p(0, len, h));
   px.line(p(0, -6, h - 2), p(0, len + 6, h - 2), PAL.wood[2]);
   px.line(p(0, -6, h + 2), p(0, len + 6, h + 2), PAL.wood[3]);
@@ -331,8 +399,12 @@ function rack(px, { start, len = 96, spread = 13, h = 68, fish = 6, proj }) {
   for (let k = 0; k < fish; k++) {
     const t = p(0, len * (0.16 + (0.7 * k) / Math.max(1, fish - 1)), h - 4);
     const L = [24, 19, 27, 21, 25, 20][k % 6];
-    px.rect(t[0] - 4, t[1] + 3, t[0] + 4, t[1] + L, (i, j) => ((j + 0.5) * P > t[1] + L - 3 ? PAL.fish[0] : (i + 0.5) * P < t[0] ? PAL.fish[2] : PAL.fish[1]));
-    px.rect(t[0] - 6, t[1], t[0] + 6, t[1] + 3.5, PAL.fish[0]);
+    // hung by the tail: a forked dark tail, a two-pixel body (pale belly on
+    // the lit left, dark back on the right), the head a pixel narrower
+    const I = Math.floor(t[0] / P), J = Math.floor(t[1] / P), n = Math.max(4, Math.round(L / P));
+    px.set(I - 1, J, PAL.fish[0]); px.set(I + 1, J, PAL.fish[0]); px.set(I, J + 1, PAL.fish[0]);
+    for (let r = 2; r < n; r++) { px.set(I - 1, J + r, PAL.fish[2]); px.set(I, J + r, PAL.fish[0]); if (r > 2 && r < n - 1) px.set(I + 1, J + r, PAL.fish[1]); }
+    px.set(I - 1, J + n, PAL.fish[1]); px.set(I, J + n - 1, '#1a1420');
   }
   leg(p(-spread, 0, 0), p(0, 0, h)); leg(p(spread, 0, 0), p(0, 0, h));
   px.outline();
@@ -355,6 +427,13 @@ function ground(scene, rings, fill, dress) {
   return px.out();
 }
 const h01 = (i, j, s) => { const n = Math.sin(i * 127.1 + j * 311.7 + s * 74.7) * 43758.5453; return n - Math.floor(n); };
+// smooth value noise, for ground patches with organic edges instead of blocks
+function vnoise(x, y, s) {
+  const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j;
+  const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+  const a = h01(i, j, s), b = h01(i + 1, j, s), c = h01(i, j + 1, s), d = h01(i + 1, j + 1, s);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
 
 export function renderPixelScene(scene) {
   const proj = scene.proj ?? { au: 20, av: 30 };
@@ -370,8 +449,19 @@ export function renderPixelScene(scene) {
     void base;
   };
   const planes = [
-    { id: 'sand', ...ground(scene, L.sand, (i, j) => (h01(i, j, 1) < 0.04 ? PAL.sandDark : h01(i, j, 2) < 0.04 ? PAL.sandLight : PAL.sand)) },
-    { id: 'grass', ...ground(scene, L.grass, (i, j) => (h01(Math.floor(i / 6), Math.floor(j / 5), 3) < 0.18 ? PAL.grassLight : PAL.grass), (px, inHex) => {
+    { id: 'sand', ...ground(scene, L.sand, (i, j) => (h01(i, j, 1) < 0.04 ? PAL.sandDark : h01(i, j, 2) < 0.04 ? PAL.sandLight : PAL.sand), (px, inHex) => {
+      // the traced land stops just short of the hex edge; carry the sand out
+      // to the frame so no water shows in that last pixel or two
+      const H = scene.hex, edgeD = (x, y) => Math.min(...H.map((a, k) => { const b = H[(k + 1) % H.length]; return Math.abs((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1]); }));
+      for (let pass = 0; pass < 3; pass++) {
+        const a = Uint8ClampedArray.from(px.d);
+        for (let j = 0; j < px.H; j++) for (let i = 0; i < px.W; i++) {
+          if (a[(j * px.W + i) * 4 + 3] || !inHex(i, j) || edgeD((i + 0.5) * P, (j + 0.5) * P) > P * 2) continue;
+          if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([di, dj]) => { const I = i + di, J = j + dj; return I >= 0 && J >= 0 && I < px.W && J < px.H && a[(J * px.W + I) * 4 + 3]; })) px.set(i, j, PAL.sand);
+        }
+      }
+    }) },
+    { id: 'grass', ...ground(scene, L.grass, (i, j) => (vnoise(i / 9, j / 7, 3) > 0.68 ? PAL.grassLight : vnoise(i / 7, j / 6, 8) < 0.2 ? PAL.grassDark : PAL.grass), (px, inHex) => {
       edge(px, inHex, PAL.grass, PAL.grassDark);
       // tufts: little two-pixel V marks, sparse
       for (let j = 1; j < px.H; j++) for (let i = 1; i < px.W - 1; i++) {
