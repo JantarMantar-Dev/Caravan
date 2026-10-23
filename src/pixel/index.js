@@ -6,22 +6,23 @@
 // lay out identically and the lab can switch between them.
 import { iso, inPoly } from '../gen/util.js';
 
-export const P = 4;                       // tile px per art pixel
+export const P = 3;                       // tile px per art pixel
 
 export const PAL = {
-  grass: '#6cb13c', grassDark: '#57a033', grassLight: '#82c149', tuft: '#3f8a2e',
-  sand: '#e8d293', sandDark: '#d2b779', sandLight: '#f2e2ae',
-  road: '#e0c264', roadDark: '#c9a64c',
-  pine: ['#163d4b', '#1e5462', '#2a6d6c', '#3f8a73'],
-  leaf: ['#1d5636', '#2a7539', '#3f9341', '#73b84d'],
-  stone: ['#4f515e', '#72757f', '#999ba3', '#c3c4c9'],
-  wood: ['#4f3220', '#6f4729', '#93623a', '#b6854f'],
-  roof: ['#7d2c22', '#a8402c', '#c8573a'],
-  wall: ['#e9dbb7', '#cbb68c', '#a99069'],
-  fish: ['#4d6987', '#9bb3cc', '#dbe6ef'],
-  trunk: ['#4c311d', '#6e4628'],
-  awning: ['#ece3cf', '#c95b3c'],
-  pane: '#2e3a4c', door: '#6a3f22', net: '#c8b97c', white: '#f4f1e6',
+  grass: '#78bf40', grassDark: '#5fa834', grassLight: '#95d256', tuft: '#3f8a2e',
+  sand: '#f0dcaa', sandDark: '#dcc28a', sandLight: '#f8ecc8',
+  road: '#ecd59c', roadDark: '#d2b67a', roadLight: '#f6e6bb',
+  pine: ['#15402e', '#1f5c38', '#2d7a42', '#4f9a4f'],
+  leaf: ['#1b5229', '#2a7531', '#45993a', '#7cc64f', '#a8dd6a'],
+  stone: ['#4d525e', '#767b86', '#a3a7af', '#d0d2d7'],
+  crate: ['#6b4423', '#a26f3c', '#c99556', '#e6bd7c'],
+  wood: ['#4a2e1d', '#6e4528', '#966139', '#bc8a52', '#d8aa6c'],
+  roof: ['#7a2a20', '#b2432c', '#d45b37', '#ea7d4f'],
+  wall: ['#f5efe0', '#ddd2b8', '#b3a585'],
+  fish: ['#3d5878', '#8fa9c4', '#d8e4ee', '#ffffff'],
+  trunk: ['#43291a', '#6a4327', '#8c5c34'],
+  awning: ['#f1e9d6', '#cf5a3b'],
+  pane: '#2b3a50', door: '#7a4826', net: '#ece4cc', netKnot: '#8a7a55', white: '#f8f6ec',
   // one shadow for everything, on any ground: a cool translucent dark
   shadow: [16, 28, 46, 78],
 };
@@ -102,7 +103,7 @@ class Pix {
         if (I < 0 || J < 0 || I >= W || J >= H) continue;
         const n = (J * W + I) * 4;
         if (src[n + 3] !== 255) continue;
-        this.set(i, j, [src[n] * 0.4 + OUT[0] * 0.6, src[n + 1] * 0.4 + OUT[1] * 0.6, src[n + 2] * 0.4 + OUT[2] * 0.6, 255]);
+        this.set(i, j, [src[n] * 0.25 + OUT[0] * 0.75, src[n + 1] * 0.25 + OUT[1] * 0.75, src[n + 2] * 0.25 + OUT[2] * 0.75, 255]);
         break;
       }
     }
@@ -148,14 +149,22 @@ function crown(px, cx, cy, r, form, flip, pal = PAL.leaf) {
       if (ny < -0.62 && nx < -0.05 && nx > -0.6) t = 3;               // brightest leaves
       if (lx > cx + r * 0.25 && t > 0) t -= 1;                       // the shaded side
       if (ly < cy - r * 0.3 && t < 3 && ny < 0.2) t += 1;              // the top catches more sun
+      // leaf texture: stray lit leaves in the body, dark gaps under the caps
+      const n = h01(i, j, 11 + k);
+      if (t >= 1 && t < 3 && n < 0.16 && ny < 0.3) t += 1;
+      else if (t >= 1 && n > 0.9) t -= 1;
+      if (t === 3 && ny < -0.75 && nx < -0.2 && n < 0.5) t = 4;
       return pal[t];
     }
     return null;
   };
   for (const [lx, ly, q] of L) px.ellipse(lx, ly, q, q, (i, j) => tone(i, j));
 }
+// a trunk lit on the left, flaring into roots at the foot
 function trunk(px, x, y, top, w) {
-  px.rect(x - w / 2, top, x + w / 2, y, (i) => ((i + 0.5) * P < x ? PAL.trunk[1] : PAL.trunk[0]));
+  const c = (i) => { const xx = (i + 0.5) * P; return xx < x - w * 0.2 ? PAL.trunk[2] : xx < x + w * 0.15 ? PAL.trunk[1] : PAL.trunk[0]; };
+  px.rect(x - w / 2, top, x + w / 2, y, c);
+  px.poly([[x - w / 2, y - P * 1.5], [x + w / 2, y - P * 1.5], [x + w / 2 + P * 1.2, y], [x - w / 2 - P * 1.2, y]], c);
 }
 function groundShadow(px, x, y, rx, ry) { px.ellipse(x, y, rx, ry, (i, j) => (px.alpha(i, j) === 255 ? null : PAL.shadow)); }
 
@@ -187,8 +196,11 @@ function pine(px, { x, y, w = 50, h = 84, tiers = 4, seed = 1 }) {
     const hw = (w / 2) * (0.18 + 0.82 * widths[k]) * (0.45 + 0.55 * u) * Math.min(1, t * 6 + 0.2);
     for (let i = Math.floor((x - hw) / P); (i + 0.5) * P <= x + hw; i++) {
       const dx = ((i + 0.5) * P - x) / Math.max(hw, 1);
-      const c = u > 0.82 && dx > -0.6 ? pal[0] : dx < -0.45 && u < 0.75 ? pal[3] : dx < 0.05 ? pal[2] : dx < 0.55 ? pal[1] : pal[0];
-      px.set(i, j, c);
+      let t = u > 0.82 && dx > -0.6 ? 0 : dx < -0.45 && u < 0.75 ? 3 : dx < 0.05 ? 2 : dx < 0.55 ? 1 : 0;
+      // needles: short lit strokes and dark gaps scattered through each tier
+      const n = h01(i, j, 21);
+      if (t > 0 && t < 3 && n < 0.14) t += 1; else if (t > 0 && n > 0.88) t -= 1;
+      px.set(i, j, pal[t]);
     }
   }
   px.outline();
@@ -215,9 +227,21 @@ function boulder(R, px, x, y, bw, bh, wet) {
     nx /= n; ny /= n;
     if (nx * (A[0] - x) + ny * (A[1] - cy) < 0) { nx = -nx; ny = -ny; }   // outward
     const d = nx * L[0] + ny * L[1];
-    px.poly([A, B, W[(i + 1) % k], W[i]], d > 0.5 ? pal[3] : d > 0.0 ? pal[2] : d > -0.8 ? pal[1] : pal[0]);
+    const t = d > 0.5 ? 3 : d > 0.0 ? 2 : d > -0.8 ? 1 : 0;
+    // pitted surface: a few darker pixels on each facet
+    px.poly([A, B, W[(i + 1) % k], W[i]], (I, J) => pal[t > 0 && h01(I, J, 31) < 0.1 ? t - 1 : t]);
   }
-  px.poly(W, pal[2]);
+  px.poly(W, (I, J) => pal[h01(I, J, 32) < 0.08 ? 1 : h01(I, J, 33) < 0.1 ? 3 : 2]);
+  // the top plane's upper-left edges catch the light
+  for (let i = 0; i < k; i++) {
+    const A = W[i], B = W[(i + 1) % k];
+    if ((A[1] + B[1]) / 2 < C[1] && (A[0] + B[0]) / 2 < C[0] + bw * 0.1) px.line(A, B, pal[3]);
+  }
+  // a crack from the top plane down a shaded facet
+  if (bw > P * 7) {
+    const s = Math.floor(R() * k), A = W[s], B = V[s];
+    if (B[0] > C[0]) px.line(A, [(A[0] + B[0]) / 2 + P, (A[1] + B[1]) / 2], pal[0]);
+  }
   if (wet) px.poly(V, (i, j) => ((j + 0.5) * P > y - Math.max(P, bh * 0.14) ? '#45606f' : null));
 }
 function rock(px, { x, y, w = 40, h = 30, n = 1, seed = 1, wet = false }) {
@@ -248,8 +272,13 @@ function uvOf(proj, p, z = 0) {
 function castShadow(px, pts) { px.poly(pts, (i, j) => (px.alpha(i, j) === 255 ? null : PAL.shadow)); }
 function post(px, p, u, v, z0, z1, r) {
   const b = p(u, v, z0), t = p(u, v, z1);
-  px.rect(b[0] - r, t[1], b[0] + r, b[1], (i) => ((i + 0.5) * P < b[0] - r * 0.1 ? PAL.wood[2] : PAL.wood[1]));
-  px.rect(t[0] - r, t[1] - P * 0.6, t[0] + r, t[1] + P * 0.4, PAL.wood[3]);
+  // round post: lit stripe on the left, a ring of grain, a pale cut top
+  px.rect(b[0] - r, t[1], b[0] + r, b[1], (i, j) => {
+    const x = (i + 0.5) * P - b[0];
+    const c = x < -r * 0.45 ? 3 : x < r * 0.2 ? 2 : x < r * 0.7 ? 1 : 0;
+    return PAL.wood[(j * 7) % 11 === 0 && c > 0 ? c - 1 : c];
+  });
+  px.rect(t[0] - r, t[1] - P * 0.6, t[0] + r, t[1] + P * 0.4, PAL.wood[4]);
 }
 
 function dock(px, { origin, len = 270, depth = 54, height = 32, thick = 9, gap = 46, postUp = 12, postR = 6.8, proj }) {
@@ -259,10 +288,23 @@ function dock(px, { origin, len = 270, depth = 54, height = 32, thick = 9, gap =
   for (const u of us) post(px, p, u, depth - 4, -height, -thick, postR * 0.9);
   // deck: boards four art pixels wide, one connected dark seam between each,
   // every fifth board a shade darker so the deck is not a flat sheet
-  const pl = P * 4, uv = uvOf(proj, p);
-  px.poly([p(0, 0, 0), p(len, 0, 0), p(len, depth, 0), p(0, depth, 0)], (i, j) => (Math.floor(uv(i, j)[0] / pl) % 5 === 3 ? PAL.wood[2] : PAL.wood[3]));
-  for (let u = pl; u < len - 2; u += pl) px.line(p(u, 1, 0), p(u, depth - 1, 0), PAL.wood[1]);
-  px.poly([p(0, 0, 0), p(len, 0, 0), p(len, 0, -thick), p(0, 0, -thick)], PAL.wood[1]);
+  // each board its own tone, with grain streaks and knots; butt joints
+  // staggered across the deck and a nail pair where boards cross the joists
+  const pl = 14, uv = uvOf(proj, p), TONE = [3, 3, 2, 4, 3, 2, 3, 4];
+  px.poly([p(0, 0, 0), p(len, 0, 0), p(len, depth, 0), p(0, depth, 0)], (i, j) => {
+    const [u, v] = uv(i, j), b = Math.floor(u / pl), t = TONE[Math.floor(h01(b, 0, 41) * 8)];
+    const n = h01(i, j, 42);
+    if (n < 0.025) return PAL.wood[t - 1];
+    return PAL.wood[t];
+  });
+  for (let u = pl, b = 1; u < len - 2; u += pl, b++) {
+    px.line(p(u, 1, 0), p(u, depth - 1, 0), PAL.wood[1]);
+    const jv = depth * [0.3, 0.62, 0.45][b % 3];
+    px.line(p(u - pl + 2, jv, 0), p(u - 2, jv, 0), PAL.wood[1]);
+    for (const v of [4, depth - 5]) { const q = p(u - pl / 2, v, 0); px.set(Math.floor(q[0] / P), Math.floor(q[1] / P), PAL.wood[0]); }
+  }
+  px.poly([p(0, 0, 0), p(len, 0, 0), p(len, 0, -thick), p(0, 0, -thick)], (i, j) => (h01(i, j, 44) < 0.08 ? PAL.wood[0] : PAL.wood[1]));
+  px.line(p(0, 0, -1), p(len, 0, -1), PAL.wood[2]);
   px.poly([p(len, 0, 0), p(len, depth, 0), p(len, depth, -thick), p(len, 0, -thick)], PAL.wood[0]);
   for (const [i, u] of us.entries()) post(px, p, u, -1.5, -height, postUp - (i % 3) * 2, postR);
   post(px, p, len + 1.5, depth - 6, -height, postUp, postR);
@@ -275,15 +317,26 @@ function house(px, { corner, w = 74, d = 50, h = 44, rise = 30, over = 5, chimne
   const p = at(proj, [corner[0] - w * U[0], corner[1] - w * U[1]]);
   const half = d / 2, top = h + rise, ze = h - over * (rise / half);
   px.poly([p(-over, half, top), p(w + over, half, top), p(w + over, d + over, ze), p(-over, d + over, ze)], PAL.roof[0]);
-  px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, h), p(0, 0, h)], PAL.wall[0]);
-  px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, h), p(w, half, top), p(w, 0, h)], PAL.wall[1]);
-  px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, 5), p(0, 0, 5)], PAL.wall[2]);
-  px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, 5), p(w, 0, 5)], PAL.wall[2]);
+  // plaster with a few blemishes; the side wall in shade
+  px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, h), p(0, 0, h)], (i, j) => PAL.wall[h01(i, j, 51) < 0.06 ? 1 : 0]);
+  px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, h), p(w, half, top), p(w, 0, h)], (i, j) => PAL.wall[h01(i, j, 52) < 0.07 ? 2 : 1]);
+  // a stone footing: blocks with mortar joints
+  const foot = (q, n, lit) => {
+    px.poly([q(0, 0), q(n, 0), q(n, 7), q(0, 7)], lit ? PAL.stone[2] : PAL.stone[1]);
+    px.line(q(0, 3.5), q(n, 3.5), PAL.stone[0]);
+    for (let s2 = 4; s2 < n; s2 += 9) { px.line(q(s2, 0), q(s2, 3.5), PAL.stone[0]); px.line(q(s2 + 4.5, 3.5), q(s2 + 4.5, 7), PAL.stone[0]); }
+  };
+  foot((s2, z) => p(s2, 0, z), w, true);
+  foot((s2, z) => p(w, s2, z), d, false);
+  // the corner where the walls meet, a lit edge
+  px.line(p(w, 0, 7), p(w, 0, h), PAL.white);
   // windows and door
   // windows: a wooden frame, a dark pane, one glint pixel in the top-left
   const win = (q) => {
-    px.poly([q(-7, 16), q(7, 16), q(7, 33), q(-7, 33)], PAL.wood[2]);
+    px.poly([q(-6, 17), q(6, 17), q(6, 32), q(-6, 32)], PAL.wood[2]);
     px.poly([q(-4, 19), q(4, 19), q(4, 30), q(-4, 30)], PAL.pane);
+    px.line(q(-4, 25), q(4, 25), PAL.wood[2]);
+    px.poly([q(-8, 14), q(8, 14), q(8, 16), q(-8, 16)], PAL.wood[1]);
     const g = q(-2.5, 28.5);
     px.set(Math.floor(g[0] / P), Math.floor(g[1] / P), '#8fa6bd');
   };
@@ -292,21 +345,33 @@ function house(px, { corner, w = 74, d = 50, h = 44, rise = 30, over = 5, chimne
   // door: a darker frame, planks, a brass knob
   const du = w * 0.72;
   px.poly([p(du - 8, 0, 0), p(du + 8, 0, 0), p(du + 8, 0, 27), p(du - 8, 0, 27)], PAL.wood[0]);
-  px.poly([p(du - 5, 0, 0), p(du + 5, 0, 0), p(du + 5, 0, 24), p(du - 5, 0, 24)], PAL.door);
+  px.poly([p(du - 8, 0, 27), p(du - 5, 0, 30.5), p(du + 5, 0, 30.5), p(du + 8, 0, 27)], PAL.wood[0]);
+  px.poly([p(du - 5, 0, 0), p(du + 5, 0, 0), p(du + 5, 0, 24), p(du + 3, 0, 27), p(du - 3, 0, 27), p(du - 5, 0, 24)], PAL.door);
+  px.line(p(du - 1.5, 0, 1), p(du - 1.5, 0, 25), PAL.wood[0]);
+  px.line(p(du - 4, 0, 26), p(du - 4, 0, 1), PAL.wood[2]);
   const kn = p(du + 2.5, 0, 11);
   px.set(Math.floor(kn[0] / P), Math.floor(kn[1] / P), '#e0b84a');
   // roof: courses of light and mid, a dark eave
   const S = (s, t) => p(s, -over + (half + over) * t, ze + (top - ze) * t);
-  const rows = 5;
-  for (let r = 0; r < rows; r++) px.poly([S(-over, r / rows), S(w + over, r / rows), S(w + over, (r + 1) / rows), S(-over, (r + 1) / rows)], r % 2 ? PAL.roof[1] : PAL.roof[2]);
+  // clay tiles: courses with a shadowed lower lip, staggered joints, the
+  // odd sun-bleached tile
+  const rows = 7;
+  for (let r = 0; r < rows; r++) px.poly([S(-over, r / rows), S(w + over, r / rows), S(w + over, (r + 1) / rows), S(-over, (r + 1) / rows)], (i, j) => {
+    const n = h01(i, j, 53);
+    return n < 0.07 ? PAL.roof[3] : n > 0.95 ? PAL.roof[1] : PAL.roof[2];
+  });
+  for (let r = 1; r < rows; r++) px.line(S(-over, r / rows), S(w + over, r / rows), PAL.roof[1]);
+  for (let r = 0; r < rows; r++)
+    for (let s2 = -over + (r % 2 ? 5 : 0) + 4; s2 < w + over - 2; s2 += 10) px.line(S(s2, (r + 0.15) / rows), S(s2, (r + 0.8) / rows), PAL.roof[1]);
   px.poly([S(-over, 0), S(w + over, 0), S(w + over, 0.08), S(-over, 0.08)], PAL.roof[0]);
   px.poly([p(w + over, -over, ze), p(w + over, half, top), p(w + over, half, top - 4), p(w + over, -over, ze - 4)], PAL.roof[0]);
   px.line(p(-over, half, top), p(w + over, half, top), PAL.roof[0]);
   if (chimney) {
     const cu = w * chimney, cv = half * 0.35;
     const zr = ze + (top - ze) * ((cv + over) / (half + over));
-    px.poly([p(cu, cv, zr), p(cu + 11, cv, zr), p(cu + 11, cv, top + 6), p(cu, cv, top + 6)], PAL.stone[3]);
-    px.poly([p(cu + 11, cv, zr), p(cu + 11, cv + 10, zr), p(cu + 11, cv + 10, top + 6), p(cu + 11, cv, top + 6)], PAL.stone[1]);
+    px.poly([p(cu, cv, zr), p(cu + 11, cv, zr), p(cu + 11, cv, top + 6), p(cu, cv, top + 6)], PAL.wall[0]);
+    px.poly([p(cu + 11, cv, zr), p(cu + 11, cv + 10, zr), p(cu + 11, cv + 10, top + 6), p(cu + 11, cv, top + 6)], PAL.wall[2]);
+    px.line(p(cu, cv, top + 1), p(cu + 11, cv, top + 1), PAL.wall[1]);
     // a darker cap with the flue showing
     px.poly([p(cu - 2, cv - 2, top + 6), p(cu + 13, cv - 2, top + 6), p(cu + 13, cv + 12, top + 6), p(cu - 2, cv + 12, top + 6)], PAL.stone[1]);
     px.poly([p(cu + 2, cv + 2, top + 6), p(cu + 9, cv + 2, top + 6), p(cu + 9, cv + 8, top + 6), p(cu + 2, cv + 8, top + 6)], PAL.stone[0]);
@@ -315,34 +380,41 @@ function house(px, { corner, w = 74, d = 50, h = 44, rise = 30, over = 5, chimne
   px.poly([p(w, 0, 0), p(w + 16, 6, 0), p(w + 16, d + 6, 0), p(w, d, 0)].map(([a, b]) => [a + P, b]), (i, j) => (px.alpha(i, j) === 255 ? null : PAL.shadow));
 }
 
-function box(px, p, w, d, h, top) {
+// a plank box: lit front, shaded side, board seams and corner battens
+// a plank box in pale crate wood, so it stands off the darker deck: lit
+// front, shaded side, one board seam and corner battens
+function box(px, p, w, d, h, top, C = PAL.crate) {
   px.poly([p(0, 0, h), p(w, 0, h), p(w, d, h), p(0, d, h)], top);
-  px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, h), p(0, 0, h)], PAL.wood[2]);
-  px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, h), p(w, 0, h)], PAL.wood[1]);
+  px.poly([p(0, 0, 0), p(w, 0, 0), p(w, 0, h), p(0, 0, h)], C[3]);
+  px.poly([p(w, 0, 0), p(w, d, 0), p(w, d, h), p(w, 0, h)], C[1]);
+  px.line(p(1, 0, h / 2), p(w - 1, 0, h / 2), C[1]); px.line(p(w, 1, h / 2), p(w, d - 1, h / 2), C[0]);
+  for (const u of [0, w - 3.5]) px.poly([p(u, 0, 0), p(u + 3.5, 0, 0), p(u + 3.5, 0, h), p(u, 0, h)], C[2]);
+  px.poly([p(w, d - 3.5, 0), p(w, d, 0), p(w, d, h), p(w, d - 3.5, h)], C[0]);
 }
 // crates: lit front, shaded side, a light rim round the top; fish lie in
 // rows along the crate, dark back, pale belly, a dark tail pixel
 function crate(px, { corner, w = 40, d = 26, h = 18, fill = 'fish', proj }) {
   const U = U_(proj);
   const p = at(proj, [corner[0] - w * U[0], corner[1] - w * U[1]]);
-  box(px, p, w, d, h, fill === 'lid' ? PAL.wood[3] : PAL.wood[0]);
+  box(px, p, w, d, h, fill === 'lid' ? PAL.crate[3] : PAL.crate[0]);
   const uv = uvOf(proj, p, h);
-  if (fill === 'lid') px.poly([p(0, 0, h), p(w, 0, h), p(w, d, h), p(0, d, h)], (i, j) => (Math.floor(uv(i, j)[0] / 9) % 2 && uv(i, j)[0] % 9 < 2 ? PAL.wood[2] : null));
+  if (fill === 'lid') px.poly([p(0, 0, h), p(w, 0, h), p(w, d, h), p(0, d, h)], (i, j) => (uv(i, j)[0] % 9 < 1.5 ? PAL.crate[1] : null));
   else {
     const r = 3.2;
     px.poly([p(r, r, h), p(w - r, r, h), p(w - r, d - r, h), p(r, d - r, h)], (i, j) => {
-      if (fill !== 'fish') return PAL.wood[0];
+      if (fill !== 'fish') return PAL.crate[0];
       const [u, v] = uv(i, j);
       const row = Math.floor((v - r) / 7), fv = (v - r) / 7 - row, fu = ((u - r + row * 5) % 15) / 15;
       if (fu > 0.86) return PAL.fish[0];                     // tail
+      if (fu < 0.12 && fv > 0.3 && fv < 0.6) return '#1a1420'; // eye
       if (fv < 0.42) return PAL.fish[0];                     // back
+      if (fv < 0.58 && fu > 0.2 && fu < 0.6) return PAL.fish[3]; // the shine
       return fv < 0.8 ? PAL.fish[1] : PAL.fish[2];
     });
     // the rim: board tops along the near edges, light
-    px.poly([p(0, 0, h), p(w, 0, h), p(w - r, r, h), p(r, r, h)], PAL.wood[3]);
-    px.poly([p(w, 0, h), p(w, d, h), p(w - r, d - r, h), p(w - r, r, h)], PAL.wood[2]);
+    px.poly([p(0, 0, h), p(w, 0, h), p(w - r, r, h), p(r, r, h)], PAL.crate[3]);
+    px.poly([p(w, 0, h), p(w, d, h), p(w - r, d - r, h), p(w - r, r, h)], PAL.crate[2]);
   }
-  px.line(p(1, 0, h * 0.45), p(w - 1, 0, h * 0.45), PAL.wood[1]);
   px.outline();
   castShadow(px, [p(w, 0, 0), p(w + 7, 3, 0), p(w + 7, d + 3, 0), p(w, d, 0)].map(([a, b]) => [a + 2, b + 2]));
 }
@@ -350,10 +422,11 @@ function barrel(px, { x, y, r = 9, h = 20 }) {
   // staves bulge one pixel at the middle; two dark hoops; lit left half
   px.poly([[x - r, y - h], [x + r, y - h], [x + r + P * 0.6, y - h / 2], [x + r, y], [x - r, y], [x - r - P * 0.6, y - h / 2]], (i, j) => {
     const yy = (j + 0.5) * P, t = (y - yy) / h, xx = (i + 0.5) * P;
-    if (Math.abs(t - 0.22) < 0.08 || Math.abs(t - 0.74) < 0.08) return xx < x ? PAL.stone[1] : PAL.stone[0];
-    return xx < x - r * 0.2 ? PAL.wood[3] : xx < x + r * 0.4 ? PAL.wood[2] : PAL.wood[1];
+    if (Math.abs(t - 0.22) < 0.08 || Math.abs(t - 0.74) < 0.08) return xx < x - r * 0.3 ? PAL.stone[2] : xx < x + r * 0.3 ? PAL.stone[1] : PAL.stone[0];
+    if (Math.abs(xx - (x - r * 0.35)) < P * 0.5 || Math.abs(xx - (x + r * 0.35)) < P * 0.5) return xx < x ? PAL.wood[2] : PAL.wood[0];  // stave joints
+    return xx < x - r * 0.55 ? PAL.wood[4] : xx < x - r * 0.1 ? PAL.wood[3] : xx < x + r * 0.5 ? PAL.wood[2] : PAL.wood[1];
   });
-  px.ellipse(x, y - h, r, Math.max(P * 0.8, r * 0.45), (i) => ((i + 0.5) * P < x + r * 0.5 ? PAL.wood[3] : PAL.wood[2]));
+  px.ellipse(x, y - h, r, Math.max(P * 0.8, r * 0.45), (i, j, u, v) => (u * u + v * v > 0.55 ? PAL.wood[1] : u < 0.2 && v < 0 ? PAL.wood[4] : PAL.wood[3]));
   px.outline();
   groundShadow(px, x + r * 0.6, y + 1, r * 1.1, r * 0.4);
 }
@@ -389,13 +462,11 @@ function fence(px, { start, len = 40, dir = 'v', posts = 4, h = 17, proj }) {
 }
 function rack(px, { start, len = 96, spread = 13, h = 68, fish = 6, proj }) {
   const p = at(proj, start);
-  const leg = (a, b) => { px.line(a, b, PAL.wood[2]); };
+  // legs two pixels thick: lit and shaded side by side
+  const leg = (a, b) => { px.line(a, b, PAL.wood[3]); px.line([a[0] + P, a[1]], [b[0] + P, b[1]], PAL.wood[1]); };
   leg(p(-spread, len, 0), p(0, len, h)); leg(p(spread, len, 0), p(0, len, h));
   px.line(p(0, -6, h - 2), p(0, len + 6, h - 2), PAL.wood[2]);
   px.line(p(0, -6, h + 2), p(0, len + 6, h + 2), PAL.wood[3]);
-  // the net as one sagging shape
-  const a = p(0, len * 0.08, h - 4), b = p(0, len * 0.9, h - 4), m = [(a[0] + b[0]) / 2 + 3, (a[1] + b[1]) / 2 + h * 0.62];
-  px.poly([a, [a[0] + 2, (a[1] + m[1]) / 2], m, [b[0] + 4, (b[1] + m[1]) / 2], b], (i, j) => ((i + j) % 3 === 0 && (i - j) % 3 === 0 ? '#9c8c55' : PAL.net));
   for (let k = 0; k < fish; k++) {
     const t = p(0, len * (0.16 + (0.7 * k) / Math.max(1, fish - 1)), h - 4);
     const L = [24, 19, 27, 21, 25, 20][k % 6];
@@ -403,11 +474,27 @@ function rack(px, { start, len = 96, spread = 13, h = 68, fish = 6, proj }) {
     // the lit left, dark back on the right), the head a pixel narrower
     const I = Math.floor(t[0] / P), J = Math.floor(t[1] / P), n = Math.max(4, Math.round(L / P));
     px.set(I - 1, J, PAL.fish[0]); px.set(I + 1, J, PAL.fish[0]); px.set(I, J + 1, PAL.fish[0]);
-    for (let r = 2; r < n; r++) { px.set(I - 1, J + r, PAL.fish[2]); px.set(I, J + r, PAL.fish[0]); if (r > 2 && r < n - 1) px.set(I + 1, J + r, PAL.fish[1]); }
-    px.set(I - 1, J + n, PAL.fish[1]); px.set(I, J + n - 1, '#1a1420');
+    for (let r = 2; r < n; r++) {
+      px.set(I - 1, J + r, r > 3 && r < n - 2 && r % 3 === 1 ? PAL.fish[3] : PAL.fish[2]);
+      px.set(I, J + r, PAL.fish[1]);
+      if (r > 2 && r < n - 1) px.set(I + 1, J + r, PAL.fish[0]);
+    }
+    px.set(I - 1, J + n, PAL.fish[1]); px.set(I, J + n, PAL.fish[1]); px.set(I, J + n - 2, '#1a1420');
   }
   leg(p(-spread, 0, 0), p(0, 0, h)); leg(p(spread, 0, 0), p(0, 0, h));
   px.outline();
+  // the net, one sagging shape of knotted mesh: diagonal cords both ways with
+  // the gaps left open. Drawn after the outline so each cord is not edged
+  // dark, and only behind what is already there
+  const a = p(0, len * 0.08, h - 4), b = p(0, len * 0.9, h - 4), m = [(a[0] + b[0]) / 2 + 3, (a[1] + b[1]) / 2 + h * 0.62];
+  px.poly([a, [a[0] + 2, (a[1] + m[1]) / 2], m, [b[0] + 4, (b[1] + m[1]) / 2], b], (i, j) => {
+    if (px.alpha(i, j) === 255) return null;
+    const u = (i + j) % 3 === 0, v = (i - j + 300) % 3 === 0;
+    return u && v ? PAL.netKnot : u || v ? PAL.net : null;
+  });
+  // the heavier rope along the sagging hem
+  const hem = (q, r) => { if (px.alpha(Math.floor(q[0] / P), Math.floor(q[1] / P)) !== 255) px.line(q, r, PAL.netKnot); };
+  hem([a[0] + 2, (a[1] + m[1]) / 2], m); hem(m, [b[0] + 4, (b[1] + m[1]) / 2]);
 }
 function flowers(px, { x, y, n = 4, r = 9, seed = 17 }) {
   const R = rng(seed);
@@ -449,7 +536,7 @@ export function renderPixelScene(scene) {
     void base;
   };
   const planes = [
-    { id: 'sand', ...ground(scene, L.sand, (i, j) => (h01(i, j, 1) < 0.04 ? PAL.sandDark : h01(i, j, 2) < 0.04 ? PAL.sandLight : PAL.sand), (px, inHex) => {
+    { id: 'sand', ...ground(scene, L.sand, (i, j) => (h01(i, j, 1) < 0.05 ? PAL.sandDark : h01(i, j, 2) < 0.06 ? PAL.sandLight : vnoise(i / 8, j / 5, 6) < 0.25 && (i + j) % 2 ? PAL.sandDark : PAL.sand), (px, inHex) => {
       // the traced land stops just short of the hex edge; carry the sand out
       // to the frame so no water shows in that last pixel or two
       const H = scene.hex, edgeD = (x, y) => Math.min(...H.map((a, k) => { const b = H[(k + 1) % H.length]; return Math.abs((b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0])) / Math.hypot(b[0] - a[0], b[1] - a[1]); }));
@@ -461,15 +548,28 @@ export function renderPixelScene(scene) {
         }
       }
     }) },
-    { id: 'grass', ...ground(scene, L.grass, (i, j) => (vnoise(i / 9, j / 7, 3) > 0.68 ? PAL.grassLight : vnoise(i / 7, j / 6, 8) < 0.2 ? PAL.grassDark : PAL.grass), (px, inHex) => {
+    { id: 'grass', ...ground(scene, L.grass, (i, j) => {
+      // soft patches of light and dark grass, edged with a checker dither
+      const a = vnoise(i / 11, j / 8, 3), b = vnoise(i / 9, j / 7, 8), ck = (i + j) % 2 === 0;
+      if (a > 0.7 || (a > 0.67 && ck)) return PAL.grassLight;
+      if (b < 0.2 || (b < 0.23 && ck)) return PAL.grassDark;
+      return PAL.grass;
+    }, (px, inHex) => {
       edge(px, inHex, PAL.grass, PAL.grassDark);
       // tufts: little two-pixel V marks, sparse
       for (let j = 1; j < px.H; j++) for (let i = 1; i < px.W - 1; i++) {
-        if (px.alpha(i, j) !== 255 || px.alpha(i - 1, j - 1) !== 255 || px.alpha(i + 1, j - 1) !== 255 || h01(i, j, 4) > 0.022) continue;
-        px.set(i, j, PAL.tuft); px.set(i - 1, j - 1, PAL.tuft); px.set(i + 1, j - 1, PAL.tuft);
+        if (px.alpha(i, j) !== 255 || px.alpha(i - 1, j - 1) !== 255 || px.alpha(i + 1, j - 1) !== 255) continue;
+        const n = h01(i, j, 4);
+        if (n < 0.03) { px.set(i, j, PAL.tuft); px.set(i - 1, j - 1, PAL.tuft); px.set(i + 1, j - 1, PAL.tuft); }
+        else if (n < 0.045) { px.set(i, j - 1, PAL.grassLight); px.set(i, j, PAL.tuft); }       // a lit blade
+        else if (n > 0.9975) px.set(i, j, h01(i, j, 5) < 0.5 ? PAL.white : '#f2c230');     // a stray flower
       }
     }) },
-    { id: 'road', ...ground(scene, L.road, () => PAL.road, (px, inHex) => edge(px, inHex, PAL.road, PAL.roadDark)) },
+    // the road: packed earth, pale down the middle where it is walked, pebbles
+    { id: 'road', ...ground(scene, L.road, (i, j) => {
+      const n = h01(i, j, 7);
+      return n < 0.03 ? PAL.roadDark : n > 0.97 ? PAL.roadLight : vnoise(i / 6, j / 5, 9) > 0.72 ? PAL.roadLight : vnoise(i / 6, j / 5, 9) > 0.68 && (i + j) % 2 ? PAL.roadLight : PAL.road;
+    }, (px, inHex) => edge(px, inHex, PAL.road, PAL.roadDark)) },
   ];
   const objects = [];
   for (const a of scene.assets) {

@@ -296,10 +296,11 @@ export function pixelWaterMesh(hex, ox, oy, field, w, h, cell) {
       uniform vec4 uTile;
       varying vec2 vPx;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      const vec3 WATER = vec3(0.17, 0.45, 0.76);
-      const vec3 SHALLOW = vec3(0.27, 0.58, 0.85);
-      const vec3 LIGHT = vec3(0.47, 0.71, 0.92);
-      const vec3 FOAM = vec3(0.86, 0.93, 0.98);
+      const vec3 DEEP = vec3(0.07, 0.48, 0.82);
+      const vec3 WATER = vec3(0.11, 0.62, 0.90);
+      const vec3 SHALLOW = vec3(0.30, 0.77, 0.95);
+      const vec3 LIGHT = vec3(0.62, 0.89, 0.99);
+      const vec3 FOAM = vec3(0.93, 0.98, 1.0);
       const vec3 WET = vec3(0.70, 0.58, 0.38);
       const vec3 FILM_P = vec3(0.55, 0.77, 0.93);
       void main() {
@@ -328,7 +329,12 @@ export function pixelWaterMesh(hex, ox, oy, field, w, h, cell) {
         float run = hash(floor(c / vec2(4.0, 3.0)) + floor(t / 1.5) * 3.1);
         float reach = sw < 0.5 ? sw * 2.0 : 2.0 - sw * 2.0;
         if (sd >= 0.0) {
-          if (sd < 3.0) col = SHALLOW;
+          // depth bands, each edge broken by a checker dither row
+          bool ck = mod(c.x + c.y, 2.0) == 0.0;
+          if (sd > 16.0 || (sd > 14.0 && ck)) col = DEEP;
+          if (sd < 4.0 || (sd < 5.0 && ck)) col = SHALLOW;
+          // a pale ring round rocks and posts where the water lifts
+          if (ds > 0.01 && (ds < 2.5 || (ds < 3.5 && ck))) col = LIGHT;
           // shore foam: a one-pixel line, two when the swell is up, in runs
           if (sd < 1.0 && run > 0.2) col = FOAM;
           else if (sd < 2.0 && reach > 0.55 && run > 0.45) col = FOAM;
