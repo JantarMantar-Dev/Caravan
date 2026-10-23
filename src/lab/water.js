@@ -268,3 +268,77 @@ export function waterMesh(hex, ox, oy, field, w, h) {
   });
   return new THREE.Mesh(geo, mat);
 }
+
+// The pixel-art version of the same water: the field is sampled at the
+// centre of each art pixel (cell tile px), colours come from a small palette
+// and time advances in steps, so the motion reads as frame animation.
+export function pixelWaterMesh(hex, ox, oy, field, w, h, cell) {
+  const shape = new THREE.Shape(hex.map(([x, y]) => new THREE.Vector2(x - ox, -(y - oy))));
+  const geo = new THREE.ShapeGeometry(shape);
+  const mat = new THREE.ShaderMaterial({
+    ...BLEND,
+    uniforms: {
+      uField: { value: field }, uTime: { value: 0 }, uOpacity: { value: 1 }, uDim: { value: 0 }, uFlash: { value: 0 }, uLive: { value: 1 },
+      uTile: { value: new THREE.Vector4(ox, oy, w, h) }, uCell: { value: cell },
+    },
+    vertexShader: /* glsl */`
+      uniform vec4 uTile;
+      varying vec2 vPx;
+      void main() {
+        vPx = vec2(position.x + uTile.x, -position.y + uTile.y);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      uniform sampler2D uField;
+      uniform float uTime, uOpacity, uDim, uFlash, uLive, uCell;
+      uniform vec4 uTile;
+      varying vec2 vPx;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      const vec3 WATER = vec3(0.17, 0.45, 0.76);
+      const vec3 SHALLOW = vec3(0.27, 0.58, 0.85);
+      const vec3 LIGHT = vec3(0.47, 0.71, 0.92);
+      const vec3 FOAM = vec3(0.86, 0.93, 0.98);
+      const vec3 WET = vec3(0.78, 0.66, 0.43);
+      void main() {
+        vec2 c = floor(vPx / uCell);
+        vec2 px = (c + 0.5) * uCell;
+        vec4 F = texture2D(uField, px / uTile.zw);
+        float sd = F.r / uCell, ds = F.g / uCell;      // in art pixels
+        float t = floor(uTime * uLive * 6.0) / 6.0;      // 6 frames a second
+        float sw = fract(t / ${SWELL_PERIOD.toFixed(2)});
+        vec3 col = WATER;
+        float a = 1.0;
+        if (sd >= 0.0) {
+          if (sd < 3.0) col = SHALLOW;
+          // shore foam: a broken one-pixel line that breathes with the swell
+          float reach = sw < 0.5 ? sw * 2.0 : 2.0 - sw * 2.0;
+          if (sd < 0.5 + reach * 1.2 && hash(c + floor(t * 0.5)) > 0.25) col = FOAM;
+          // a light line rolling in towards the beach
+          float arc = mix(6.0, 1.5, sw);
+          if (abs(sd - arc) < 0.5 && hash(vec2(floor(c.x / 3.0), c.y) + 7.0) > 0.35) col = LIGHT;
+          // open water: short light dashes that come and go
+          vec2 cell = floor((c + vec2(floor(t * 1.5), 0.0)) / vec2(9.0, 5.0));
+          float hh = hash(cell);
+          vec2 o = (c + vec2(floor(t * 1.5), 0.0)) - cell * vec2(9.0, 5.0);
+          if (sd > 5.0 && hh > 0.72 && o.y == 2.0 && o.x >= 2.0 && o.x <= 4.0 + floor(hh * 4.0) && sin(t * 0.8 + hh * 40.0) > -0.2) col = LIGHT;
+          // rocks and posts: a ring of foam pixels, front side only
+          if (ds > 0.01 && ds < 1.2 && hash(c + floor(t)) > 0.3) {
+            vec2 e = vec2(uCell, 0.0) / uTile.zw;
+            float gy = texture2D(uField, px / uTile.zw + e.yx).g - texture2D(uField, px / uTile.zw - e.yx).g;
+            if (gy > -0.2) col = FOAM;
+          }
+        } else {
+          // the beach: a damp row of sand, and the swash sliding up
+          float up = sw < 0.4 ? sw / 0.4 : 1.0 - (sw - 0.4) / 0.6;
+          if (-sd < up * 2.0 + 0.5) { col = FOAM; a = 1.0; }
+          else if (-sd < 3.0) { col = WET; a = 0.35; }
+          else a = 0.0;
+        }
+        vec4 outc = vec4(col * a, a);
+        outc.rgb = mix(outc.rgb, vec3(outc.a), uDim * 0.72);
+        outc.rgb = mix(outc.rgb, vec3(outc.a), uFlash);
+        gl_FragColor = outc * uOpacity;
+      }`,
+  });
+  return new THREE.Mesh(geo, mat);
+}

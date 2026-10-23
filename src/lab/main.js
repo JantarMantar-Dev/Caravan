@@ -14,7 +14,8 @@ import { loadTexture, layerMaterial, waterMaterial, puffTexture, WAVE_PERIOD, RI
 import { Sfx } from './sfx.js';
 import { scenes as SCENES } from '../../assets/scenes/index.js';
 import { renderScene, wrap } from '../gen/index.js';
-import { waterField, waterMesh, SWELL_PERIOD } from './water.js';
+import { waterField, waterMesh, pixelWaterMesh, SWELL_PERIOD } from './water.js';
+import { renderPixelScene, P as PIXEL } from '../pixel/index.js';
 
 const $ = (s) => document.querySelector(s);
 const canvas = $('#view');
@@ -97,6 +98,7 @@ function clearTile() {
 
 async function showTile(name) {
   if (state.version === 3 && SCENES[name]) return showGenerated(name);
+  if (state.version === 4 && SCENES[name]) return showPixel(name);
   status('loading ' + name + '…');
   const T = await loadTile(name);
   clearTile();
@@ -238,6 +240,58 @@ async function showGenerated(name) {
   document.querySelectorAll('#tiles button').forEach((b) => b.classList.toggle('on', b.dataset.tile === name));
 }
 
+// ---------- pixel-art tiles (src/pixel): the same scene on a coarse grid ----
+const pixCache = new Map();
+function pixelTexture(cv) {
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.NoColorSpace; t.premultiplyAlpha = true; t.flipY = false;
+  t.generateMipmaps = false; t.minFilter = THREE.NearestFilter; t.magFilter = THREE.NearestFilter;
+  return t;
+}
+async function showPixel(name) {
+  status('drawing ' + name + ' as pixel art…');
+  const G = await loadGenerated(name);                  // shares the layout, ox/oy and the water field
+  if (!pixCache.has(name)) pixCache.set(name, renderPixelScene(SCENES[name]));
+  const X = pixCache.get(name);
+  clearTile();
+  state.tile = name;
+  state.T = { L: { ...(G.L ?? {}), ox: G.ox, oy: G.oy, w: G.S.w, h: G.S.h, objects: X.objects }, pixel: X, gen: null };
+  const { ox, oy } = G;
+  const rel = (b) => ({ x: b[0] - ox, y: b[1] - oy, w: b[2], h: b[3] });
+  let order = 0;
+  const items = [];
+  const plane = (id, mesh, level) => ({ id, label: PLANE_LABEL[id], kind: id, type: 'plane', mesh, mat: mesh.material, ax: 0, ay: 0, level, band: PLANE_LABEL[id] });
+  const byId = Object.fromEntries(X.planes.map((p) => [p.id, p]));
+  items.push(plane('sand', quad(rel(byId.sand.box), 0, 0, layerMaterial(pixelTexture(byId.sand.canvas))), 1));
+  items.push(plane('water', pixelWaterMesh(G.S.hex, ox, oy, G.field.tex, G.S.w, G.S.h, PIXEL), 0));
+  items.push(plane('grass', quad(rel(byId.grass.box), 0, 0, layerMaterial(pixelTexture(byId.grass.canvas))), 2));
+  items.push(plane('road', quad(rel(byId.road.box), 0, 0, layerMaterial(pixelTexture(byId.road.canvas))), 3));
+  const kinds = [...new Set(X.objects.map((o) => KIND_LABEL[o.kind] ?? 'Props'))].sort((a, b) => rankOfLabel(a) - rankOfLabel(b));
+  X.objects.forEach((o, i) => {
+    const band = KIND_LABEL[o.kind] ?? 'Props';
+    const fx = o.foot[0] - ox, fy = o.foot[1] - oy;
+    const mesh = quad(rel(o.box), fx, fy, layerMaterial(pixelTexture(o.canvas)));
+    items.push({ id: o.id, label: pretty(o.id), kind: o.kind, type: 'object', mesh, mat: mesh.material, ax: fx, ay: fy,
+      level: 4 + kinds.indexOf(band), band, z: i, rank: KIND_RANK[o.kind] ?? 7, wet: !!o.wet });
+  });
+  const fr = plane('frame', quad(rel(X.frame.box), 0, 0, layerMaterial(pixelTexture(X.frame.canvas))), 0);
+  for (const it of [...items, fr]) {
+    it.mesh.renderOrder = order++;
+    it.on = true; it.alpha = 1; it.dy = 0; it.sx = 1; it.sy = 1; it.flash = 0; it.vis = 1;
+    group.add(it.mesh);
+  }
+  items.push(fr);
+  state.items = items;
+  state.wetItems = items.filter((i) => i.type === 'object' && i.wet && (i.kind === 'rock' || i.kind === 'dock'));
+  state.waterShare = G.field.share;
+  state.period = SWELL_PERIOD;
+  buildList();
+  summary();
+  fit();
+  status(`${name}: pixel art · ${PIXEL} tile px per pixel · ${X.objects.length} sprites`);
+  document.querySelectorAll('#tiles button').forEach((b) => b.classList.toggle('on', b.dataset.tile === name));
+}
+
 const rankOfLabel = (lab) => Math.min(...Object.entries(KIND_LABEL).filter(([, v]) => v === lab).map(([k]) => KIND_RANK[k] ?? 7));
 const pretty = (id) => id.replace(/_/g, ' ').replace(/\b(\w)/, (c) => c.toUpperCase());
 
@@ -302,6 +356,14 @@ function buildList() {
 
 function summary() {
   const L = state.T.L;
+  if (state.T.pixel) {
+    const kinds = {};
+    for (const o of state.T.pixel.objects) kinds[o.kind] = (kinds[o.kind] ?? 0) + 1;
+    $('#summary').innerHTML = `<b>${state.tile}</b> · pixel-art version of the same layout<br>` +
+      Object.entries(kinds).map(([k, n]) => `${n} ${k}`).join(' · ') +
+      `<br>Every sprite is drawn on a ${PIXEL} px grid with a small palette and darker edge pixels; the water animates in frames.`;
+    return;
+  }
   if (state.T.gen) {
     const kinds = {};
     for (const o of state.T.gen.S.objects) kinds[o.kind] = (kinds[o.kind] ?? 0) + 1;
@@ -326,7 +388,7 @@ $('#version').onclick = (e) => {
   state.version = v;
   document.querySelectorAll('#version button').forEach((b) => b.classList.toggle('on', +b.dataset.v === v));
   if (v === 1) { stopBuild(); state.explodeTo = 0; $('#explode').classList.remove('on'); }
-  else if (state.tile && (v === 3) !== !!state.T?.gen) { stopBuild(); showTile(state.tile); }
+  else if (state.tile && (v >= 3 || state.T?.gen || state.T?.pixel)) { stopBuild(); showTile(state.tile); }
   $('#build').disabled = $('#explode').disabled = v === 1;
 };
 $('#explode').onclick = () => {
@@ -568,6 +630,7 @@ showTile(start).then(() => {
   if (params.has('explode')) { state.explodeTo = 1; state.explode = 1; fit(); Object.assign(view, target); $('#explode').classList.add('on'); }
   if (params.has('v1')) $('#version button[data-v="1"]').click();
   if (params.has('v2')) $('#version button[data-v="2"]').click();
+  if (params.has('pixel')) $('#version button[data-v="4"]').click();
   if (params.has('t')) state.time = +params.get('t');
   if (params.has('still')) state.still = true;
   if (params.has('buildAt')) { startBuild(); for (let k = 0; k < +params.get('buildAt') * 60; k++) stepBuild(1 / 60); state.freeze = true; }
