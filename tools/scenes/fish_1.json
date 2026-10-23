@@ -1,0 +1,355 @@
+{
+ "proj": {
+  "au": 20,
+  "av": 30
+ },
+ "assets": [
+  {
+   "id": "dock",
+   "type": "dock",
+   "origin": [
+    29,
+    307
+   ],
+   "len": 270,
+   "depth": 54,
+   "height": 32,
+   "z": -1000,
+   "seed": 3,
+   "postR": 6.8,
+   "thick": 9,
+   "postUp": 12,
+   "plank": 12
+  },
+  {
+   "id": "rock_2",
+   "type": "rock",
+   "x": 44,
+   "y": 226,
+   "w": 40,
+   "h": 30,
+   "wet": true,
+   "seed": 31
+  },
+  {
+   "id": "rock_3",
+   "type": "rock",
+   "x": 83,
+   "y": 224,
+   "w": 20,
+   "h": 14,
+   "wet": true,
+   "seed": 32
+  },
+  {
+   "id": "rock_4",
+   "type": "rock",
+   "x": 71,
+   "y": 416,
+   "w": 50,
+   "h": 38,
+   "wet": true,
+   "seed": 33
+  },
+  {
+   "id": "rock_7",
+   "type": "rock",
+   "x": 130,
+   "y": 449,
+   "w": 34,
+   "h": 26,
+   "wet": true,
+   "seed": 34
+  },
+  {
+   "id": "rock_8",
+   "type": "rock",
+   "x": 233,
+   "y": 489,
+   "w": 18,
+   "h": 14,
+   "wet": true,
+   "seed": 35
+  },
+  {
+   "id": "rock_shore",
+   "type": "rock",
+   "x": 276,
+   "y": 505,
+   "w": 122,
+   "h": 70,
+   "n": 5,
+   "peak": 0.35,
+   "wet": true,
+   "seed": 36
+  },
+  {
+   "id": "rock_cliff",
+   "type": "rock",
+   "x": 60,
+   "y": 190,
+   "w": 46,
+   "h": 34,
+   "n": 3,
+   "seed": 37
+  },
+  {
+   "id": "rock_9",
+   "type": "rock",
+   "x": 98,
+   "y": 140,
+   "w": 26,
+   "h": 20,
+   "seed": 38
+  },
+  {
+   "id": "rock_6",
+   "type": "rock",
+   "x": 436,
+   "y": 444,
+   "w": 40,
+   "h": 22,
+   "n": 2,
+   "seed": 39
+  },
+  {
+   "id": "rack",
+   "type": "rack",
+   "start": [
+    112,
+    288
+   ],
+   "len": 96,
+   "spread": 13,
+   "h": 68,
+   "fish": 5,
+   "z": 230,
+   "seed": 15
+  },
+  {
+   "id": "barrel_g1",
+   "type": "barrel",
+   "x": 160,
+   "y": 290,
+   "r": 9,
+   "h": 20,
+   "seed": 41
+  },
+  {
+   "id": "barrel_g2",
+   "type": "barrel",
+   "x": 176,
+   "y": 299,
+   "r": 9,
+   "h": 20,
+   "seed": 42,
+   "lid": false
+  },
+  {
+   "id": "crate_goods",
+   "type": "crate",
+   "corner": [
+    206,
+    303
+   ],
+   "w": 30,
+   "d": 20,
+   "h": 15,
+   "fill": "fish",
+   "seed": 43
+  },
+  {
+   "id": "barrel_dock",
+   "type": "barrel",
+   "x": 139,
+   "y": 326,
+   "r": 10,
+   "h": 22,
+   "seed": 44
+  },
+  {
+   "id": "crate_fish",
+   "type": "crate",
+   "corner": [
+    228,
+    352
+   ],
+   "w": 48,
+   "d": 28,
+   "h": 18,
+   "fill": "fish",
+   "seed": 45
+  },
+  {
+   "id": "house",
+   "type": "house",
+   "corner": [
+    300,
+    316
+   ],
+   "w": 84,
+   "d": 56,
+   "h": 58,
+   "rise": 40,
+   "z": 290,
+   "seed": 5
+  },
+  {
+   "id": "crate_small",
+   "type": "crate",
+   "corner": [
+    252,
+    322
+   ],
+   "w": 28,
+   "d": 18,
+   "h": 14,
+   "fill": "lid",
+   "seed": 46
+  },
+  {
+   "id": "bush_back",
+   "type": "bush",
+   "x": 217,
+   "y": 252,
+   "r": 12,
+   "seed": 51
+  },
+  {
+   "id": "bush_house",
+   "type": "pine",
+   "x": 306,
+   "y": 303,
+   "w": 15,
+   "h": 28,
+   "tiers": 3,
+   "seed": 52
+  },
+  {
+   "id": "fence",
+   "type": "fence",
+   "start": [
+    352,
+    290
+   ],
+   "len": 36,
+   "dir": "v",
+   "posts": 4,
+   "h": 20,
+   "seed": 13
+  },
+  {
+   "id": "stall",
+   "type": "stall",
+   "corner": [
+    350,
+    333
+   ],
+   "w": 38,
+   "d": 20,
+   "h": 13,
+   "seed": 11
+  },
+  {
+   "id": "barrel_stall",
+   "type": "barrel",
+   "x": 311,
+   "y": 333,
+   "r": 8,
+   "h": 18,
+   "seed": 47
+  },
+  {
+   "id": "tree_1a",
+   "type": "tree",
+   "x": 275,
+   "y": 133,
+   "r": 40,
+   "seed": 61,
+   "form": "broad"
+  },
+  {
+   "id": "tree_1b",
+   "type": "tree",
+   "x": 226,
+   "y": 112,
+   "r": 25,
+   "seed": 62,
+   "form": "spread",
+   "flip": true
+  },
+  {
+   "id": "pine",
+   "type": "pine",
+   "x": 357,
+   "y": 162,
+   "w": 54,
+   "h": 86,
+   "seed": 63
+  },
+  {
+   "id": "tree_3",
+   "type": "tree",
+   "x": 124,
+   "y": 152,
+   "r": 19,
+   "seed": 64,
+   "form": "sapling"
+  },
+  {
+   "id": "tree_4a",
+   "type": "tree",
+   "x": 425,
+   "y": 208,
+   "r": 36,
+   "seed": 65,
+   "form": "broad",
+   "flip": true
+  },
+  {
+   "id": "tree_4b",
+   "type": "tree",
+   "x": 466,
+   "y": 214,
+   "r": 23,
+   "seed": 66,
+   "form": "spread"
+  },
+  {
+   "id": "tree_5",
+   "type": "tree",
+   "x": 476,
+   "y": 332,
+   "r": 20,
+   "seed": 67,
+   "form": "sapling",
+   "flip": true
+  },
+  {
+   "id": "tree_stall",
+   "type": "tree",
+   "x": 372,
+   "y": 368,
+   "r": 24,
+   "seed": 68,
+   "form": "spread"
+  },
+  {
+   "id": "flowers_1",
+   "type": "flowers",
+   "x": 458,
+   "y": 243,
+   "n": 5,
+   "seed": 71
+  },
+  {
+   "id": "flowers_2",
+   "type": "flowers",
+   "x": 236,
+   "y": 150,
+   "n": 3,
+   "r": 6,
+   "seed": 72
+  }
+ ]
+}
