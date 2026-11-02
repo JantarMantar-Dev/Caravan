@@ -28,6 +28,22 @@ const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
 const sfx = new Sfx();
 const params = new URLSearchParams(location.search);
 
+// ---------- version 5, pixel art rendered by the rules ----------
+// The scene is drawn into one fixed base resolution at one texel per art
+// pixel, then that image is scaled to the screen by a whole number with
+// nearest sampling and black bars round it. The camera and every sprite snap
+// to whole art pixels; nothing is scaled or rotated; effects land on the same
+// grid because they are drawn into the same small image.
+const BASE = { w: 256, h: 224 };
+const crisp = { k: 0, pan: null, cam: { x: 0, y: 0 } };
+const crispRT = new THREE.WebGLRenderTarget(BASE.w, BASE.h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, generateMipmaps: false, depthBuffer: false });
+const crispCam = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
+const blitScene = new THREE.Scene();
+const blitCam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+const blit = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: crispRT.texture }));
+blitScene.add(blit);
+const isCrisp = () => state.version === 5 && !!state.T?.pixel;
+
 const PLANE_ORDER = ['water', 'sand', 'ground', 'road'];
 const KIND_RANK = { rock: 1, ledge: 1, dock: 2, wall: 3, building: 4, tower: 4, fence: 5, stall: 5, rack: 6, crop: 6,
   prop: 7, crate: 7, barrel: 7, animal: 8, tree: 9, bush: 9, heather: 9, palm: 9, flower: 9 };
@@ -98,7 +114,7 @@ function clearTile() {
 
 async function showTile(name) {
   if (state.version === 3 && SCENES[name]) return showGenerated(name);
-  if (state.version === 4 && SCENES[name]) return showPixel(name);
+  if ((state.version === 4 || state.version === 5) && SCENES[name]) return showPixel(name);
   status('loading ' + name + '…');
   const T = await loadTile(name);
   clearTile();
@@ -288,8 +304,30 @@ async function showPixel(name) {
   buildList();
   summary();
   fit();
-  status(`${name}: pixel art · ${PIXEL} tile px per pixel · ${X.objects.length} sprites`);
+  const off = gridCheck(X);
+  state.gridNote = off.length ? `${off.length} sprites off the ${PIXEL} px grid: ${off.join(', ')}` : `all ${X.objects.length} sprites on the ${PIXEL} px grid`;
+  if (off.length) console.warn(state.gridNote);
+  crisp.k = 0; crisp.pan = null;
+  pixelStatus();
   document.querySelectorAll('#tiles button').forEach((b) => b.classList.toggle('on', b.dataset.tile === name));
+}
+
+// rule: before an asset goes in, its pixel size must match the tile's. Every
+// sprite's box must sit on the grid and its canvas hold one texel per art pixel
+function gridCheck(X) {
+  const bad = [];
+  for (const o of [...X.planes, ...X.objects, { id: 'frame', ...X.frame }]) {
+    const [x, y, w, h] = o.box;
+    if (x % PIXEL || y % PIXEL || w !== o.canvas.width * PIXEL || h !== o.canvas.height * PIXEL) bad.push(o.id);
+  }
+  return bad;
+}
+function pixelStatus() {
+  if (!state.T?.pixel) return;
+  const X = state.T.pixel;
+  status(state.version === 5
+    ? `${state.tile}: pixel art · ${BASE.w}×${BASE.h} base shown ×${crispScale()} · ${state.gridNote}`
+    : `${state.tile}: pixel art · ${PIXEL} tile px per pixel · ${X.objects.length} sprites`);
 }
 
 const rankOfLabel = (lab) => Math.min(...Object.entries(KIND_LABEL).filter(([, v]) => v === lab).map(([k]) => KIND_RANK[k] ?? 7));
@@ -361,7 +399,9 @@ function summary() {
     for (const o of state.T.pixel.objects) kinds[o.kind] = (kinds[o.kind] ?? 0) + 1;
     $('#summary').innerHTML = `<b>${state.tile}</b> · pixel-art version of the same layout<br>` +
       Object.entries(kinds).map(([k, n]) => `${n} ${k}`).join(' · ') +
-      `<br>Every sprite is drawn on a ${PIXEL} px grid with a small palette and darker edge pixels; the water animates in frames.`;
+      (state.version === 5
+        ? `<br>Rendered by the pixel-art rules: one ${BASE.w}×${BASE.h} base image, scaled to the screen by a whole number with black bars, the camera and every sprite snapped to whole pixels, nothing scaled or rotated, and effects on the same grid. Scroll to change the scale; drag moves in whole pixels.`
+        : `<br>Every sprite is drawn on a ${PIXEL} px grid with a small palette and darker edge pixels; the water animates in frames.`);
     return;
   }
   if (state.T.gen) {
@@ -389,7 +429,10 @@ $('#version').onclick = (e) => {
   document.querySelectorAll('#version button').forEach((b) => b.classList.toggle('on', +b.dataset.v === v));
   if (v === 1) { stopBuild(); state.explodeTo = 0; $('#explode').classList.remove('on'); }
   else if (state.tile && (v >= 3 || state.T?.gen || state.T?.pixel)) { stopBuild(); showTile(state.tile); }
-  $('#build').disabled = $('#explode').disabled = v === 1;
+  if (v === 5 && state.explodeTo) { state.explodeTo = 0; state.explode = 0; $('#explode').classList.remove('on'); }
+  $('#build').disabled = v === 1;
+  $('#explode').disabled = v === 1 || v === 5;
+  resize();
 };
 $('#explode').onclick = () => {
   sfx.click();
@@ -481,6 +524,7 @@ function land(it) {
   }
 }
 function spawnPuff(x, y, dir, wet) {
+  if (isCrisp()) return spawnPixelPuff(x, y, dir, wet);
   const mat = new THREE.MeshBasicMaterial({ map: puffTex, transparent: true, depthTest: false,
     blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, color: wet ? 0xd8f1ff : 0xffffff });
   const m = new THREE.Mesh(new THREE.PlaneGeometry(26, 26), mat);
@@ -489,10 +533,43 @@ function spawnPuff(x, y, dir, wet) {
   group.add(m);
   puffs.push({ m, t: 0, vx: dir * 38 + (Math.random() - 0.5) * 10, vy: 14 + Math.random() * 10 });
 }
+// in the crisp version a puff is a hand-drawn pixel sprite: it moves in
+// whole art pixels, swaps frames instead of growing, and fades in steps
+const PUFF_FRAMES = [
+  ['..##..', '.####.', '######', '.####.', '..##..'],
+  ['.#..#.', '#.##.#', '.#..#.', '#.##.#', '.#..#.'],
+  ['#....#', '..#...', '.#..#.', '...#..', '#....#'],
+].map((rows) => {
+  const cv = document.createElement('canvas');
+  cv.width = 6; cv.height = 5;
+  const g = cv.getContext('2d');
+  rows.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') { g.fillStyle = '#ffffff'; g.fillRect(i, j, 1, 1); } }));
+  const t = new THREE.CanvasTexture(cv);
+  t.colorSpace = THREE.NoColorSpace; t.generateMipmaps = false; t.minFilter = t.magFilter = THREE.NearestFilter;
+  return t;
+});
+function spawnPixelPuff(x, y, dir, wet) {
+  const mat = new THREE.MeshBasicMaterial({ map: PUFF_FRAMES[0], transparent: true, depthTest: false, color: wet ? 0xd8f1ff : 0xffffff });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(6 * PIXEL, 5 * PIXEL), mat);
+  m.renderOrder = 1e4;
+  group.add(m);
+  puffs.push({ m, t: 0, x, y: -y + 6, vx: dir * 38 + (Math.random() - 0.5) * 10, vy: 14 + Math.random() * 10, pixel: true });
+}
 function stepPuffs(dt) {
   for (let i = puffs.length - 1; i >= 0; i--) {
     const p = puffs[i];
     p.t += dt;
+    if (p.pixel) {
+      const k = p.t / 0.55;
+      if (k >= 1) { group.remove(p.m); p.m.geometry.dispose(); p.m.material.dispose(); puffs.splice(i, 1); continue; }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      // snap to the tile's grid (world x = tile x - ox, world y = oy - tile y);
+      // the sprite is 6x5 pixels, so its centre sits half a pixel off in y
+      const { ox, oy } = state.T.L;
+      p.m.position.set(Math.round((p.x + ox) / PIXEL) * PIXEL - ox, oy - Math.round((oy - p.y) / PIXEL) * PIXEL + PIXEL / 2, 0);
+      p.m.material.map = PUFF_FRAMES[Math.min(2, Math.floor(k * 3))];
+      continue;
+    }
     const k = p.t / 0.55;
     if (k >= 1) { group.remove(p.m); p.m.geometry.dispose(); p.m.material.dispose(); puffs.splice(i, 1); continue; }
     p.m.position.x += p.vx * dt; p.m.position.y += p.vy * dt;
@@ -525,7 +602,12 @@ function applyCamera() {
 }
 function resize() {
   const w = canvas.clientWidth, h = canvas.clientHeight;
+  // the crisp version maps whole pixels to whole device pixels, so it takes
+  // the device's own ratio rather than the capped one
+  renderer.setPixelRatio(state.version === 5 ? window.devicePixelRatio || 1 : Math.min(window.devicePixelRatio || 1, 2));
+  canvas.style.imageRendering = state.version === 5 ? 'pixelated' : '';
   renderer.setSize(w, h, false);
+  if (state.version === 5) pixelStatus();
   if (!userCam) fit();
 }
 new ResizeObserver(resize).observe(canvas);
@@ -533,6 +615,14 @@ let drag = null;
 canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
 canvas.addEventListener('pointermove', (e) => {
   if (!drag) return;
+  if (isCrisp()) {
+    // drag in screen px, move in tile px; the camera snaps when it is applied
+    const k = (PIXEL / crispScale()) * (window.devicePixelRatio || 1);
+    crisp.pan = crisp.pan ?? { x: 0, y: 0 };
+    crisp.pan.x -= (e.clientX - drag.x) * k; crisp.pan.y += (e.clientY - drag.y) * k;
+    drag = { x: e.clientX, y: e.clientY };
+    return;
+  }
   const k = view.h / canvas.clientHeight;
   view.x -= (e.clientX - drag.x) * k; view.y += (e.clientY - drag.y) * k;
   target.x = view.x; target.y = view.y;
@@ -542,15 +632,43 @@ canvas.addEventListener('pointermove', (e) => {
 canvas.addEventListener('pointerup', () => { drag = null; });
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
+  if (isCrisp()) { crisp.k = Math.max(1, Math.min(12, crispScale() - Math.sign(e.deltaY))); pixelStatus(); return; }
   target.h = Math.min(4000, Math.max(120, target.h * Math.exp(e.deltaY * 0.0015)));
   userCam = true;
 }, { passive: false });
-canvas.addEventListener('dblclick', fit);
+canvas.addEventListener('dblclick', () => { crisp.k = 0; crisp.pan = null; fit(); pixelStatus(); });
+// whole-number scale that fits the base resolution on screen, unless zoomed
+const crispFit = () => { const b = renderer.getDrawingBufferSize(new THREE.Vector2()); return Math.max(1, Math.floor(Math.min(b.x / BASE.w, b.y / BASE.h))); };
+const crispScale = () => crisp.k || crispFit();
+function renderCrisp() {
+  const L = state.T.L, W = BASE.w * PIXEL, H = BASE.h * PIXEL;
+  const cx = target.x + (crisp.pan?.x ?? 0), cy = target.y + (crisp.pan?.y ?? 0);
+  // world x = tile x - ox and world y = oy - tile y; snap so pixel edges fall
+  // on whole art pixels of the tile
+  const left = Math.round((cx - W / 2 + L.ox) / PIXEL) * PIXEL - L.ox;
+  const top = L.oy - Math.round((L.oy - (cy + H / 2)) / PIXEL) * PIXEL;
+  Object.assign(crispCam, { left, right: left + W, top, bottom: top - H });
+  crispCam.position.set(0, 0, 5);
+  crispCam.updateProjectionMatrix();
+  renderer.setRenderTarget(crispRT);
+  renderer.setClearColor(0xffffff, 1);
+  renderer.render(scene, crispCam);
+  renderer.setRenderTarget(null);
+  // the base image at a whole-number scale, on whole device pixels, black bars
+  const b = renderer.getDrawingBufferSize(new THREE.Vector2()), k = crispScale();
+  Object.assign(blitCam, { left: 0, right: b.x, top: b.y, bottom: 0 });
+  blitCam.updateProjectionMatrix();
+  blit.scale.set(BASE.w * k, BASE.h * k, 1);
+  blit.position.set(Math.floor((b.x - BASE.w * k) / 2) + (BASE.w * k) / 2, Math.floor((b.y - BASE.h * k) / 2) + (BASE.h * k) / 2, 0);
+  renderer.setClearColor(0x000000, 1);
+  renderer.render(blitScene, blitCam);
+  renderer.setClearColor(0xffffff, 1);
+}
 
 // ---------- labels in exploded view ----------
 const labelBox = $('#labels');
 function drawLabels() {
-  if (state.explode < 0.6 || state.version === 1) { labelBox.innerHTML = ''; return; }
+  if (state.explode < 0.6 || state.version === 1 || state.version === 5) { labelBox.innerHTML = ''; return; }
   const L = state.T.L;
   const seen = new Map();
   for (const it of state.items) {
@@ -598,9 +716,15 @@ function frame(now) {
   const focus = state.hover ?? state.sel;
   for (const it of state.items) {
     it.vis += ((it.on ? 1 : 0) - it.vis) * (1 - Math.exp(-dt * 12));
-    const off = it.level * EXPLODE_GAP * state.explode;
-    it.mesh.position.set(it.ax, -it.ay + it.dy + off, 0);
-    it.mesh.scale.set(it.sx, it.sy, 1);
+    if (isCrisp()) {
+      // whole art pixels only: drops snap to the grid, nothing squashes
+      it.mesh.position.set(it.ax, -it.ay + Math.round(it.dy / PIXEL) * PIXEL, 0);
+      it.mesh.scale.set(1, 1, 1);
+    } else {
+      const off = it.level * EXPLODE_GAP * state.explode;
+      it.mesh.position.set(it.ax, -it.ay + it.dy + off, 0);
+      it.mesh.scale.set(it.sx, it.sy, 1);
+    }
     const u = it.mat.uniforms;
     u.uOpacity.value = layered ? it.alpha * it.vis : 0;
     const isFocus = focus && (focus === it || focus === it.parent || it === focus.parent);
@@ -618,7 +742,7 @@ function frame(now) {
       if (r.on) sfx.splash((r.ax / 260) * 0.8, 0.45 + Math.random() * 0.3);
     }
   } else sfx.ambient(0, 0);
-  renderer.render(scene, camera);
+  if (isCrisp()) renderCrisp(); else renderer.render(scene, camera);
   drawLabels();
   requestAnimationFrame(frame);
 }
@@ -626,7 +750,11 @@ function frame(now) {
 // ---------- boot ----------
 buildTileChips();
 const start = params.get('tile') && LAYERS[params.get('tile')] ? params.get('tile') : (LAYERS.fish_1 ? 'fish_1' : TILE_NAMES[0]);
-if (params.has('pixel')) { state.version = 4; document.querySelectorAll('#version button').forEach((b) => b.classList.toggle('on', b.dataset.v === '4')); }
+if (params.has('pixel') || params.has('crisp')) {
+  state.version = params.has('crisp') ? 5 : 4;
+  document.querySelectorAll('#version button').forEach((b) => b.classList.toggle('on', +b.dataset.v === state.version));
+  if (state.version === 5) { $('#explode').disabled = true; resize(); }
+}
 showTile(start).then(() => {
   if (params.has('explode')) { state.explodeTo = 1; state.explode = 1; fit(); Object.assign(view, target); $('#explode').classList.add('on'); }
   if (params.has('v1')) $('#version button[data-v="1"]').click();
