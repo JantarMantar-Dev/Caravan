@@ -1,0 +1,1871 @@
+{
+ "fish_0": {
+  "w": 504,
+  "h": 575,
+  "ox": 251,
+  "oy": 286,
+  "flat": "hex/fish_0_m.avif",
+  "planes": [
+   {
+    "id": "water",
+    "file": "layers/fish_0/plane_water.avif",
+    "x": -245,
+    "y": -283,
+    "w": 491,
+    "h": 567
+   },
+   {
+    "id": "sand",
+    "file": "layers/fish_0/plane_sand.avif",
+    "x": -211,
+    "y": -283,
+    "w": 457,
+    "h": 459
+   },
+   {
+    "id": "ground",
+    "file": "layers/fish_0/plane_ground.avif",
+    "x": -170,
+    "y": -280,
+    "w": 416,
+    "h": 410
+   }
+  ],
+  "objects": [
+   {
+    "id": "rock_1",
+    "kind": "rock",
+    "foot": [
+     -126.0,
+     -183.0
+    ],
+    "z": -183.0,
+    "area": 391,
+    "body": {
+     "file": "layers/fish_0/obj_rock_1.avif",
+     "x": -142,
+     "y": -204,
+     "w": 38,
+     "h": 24
+    }
+   },
+   {
+    "id": "tree_1",
+    "kind": "tree",
+    "foot": [
+     -20.0,
+     -162.0
+    ],
+    "z": -162.0,
+    "area": 4405,
+    "body": {
+     "file": "layers/fish_0/obj_tree_1.avif",
+     "x": -75,
+     "y": -258,
+     "w": 140,
+     "h": 98
+    }
+   },
+   {
+    "id": "rock_3",
+    "kind": "rock",
+    "foot": [
+     -187.5,
+     -143.0
+    ],
+    "z": -143.0,
+    "area": 249,
+    "body": {
+     "file": "layers/fish_0/obj_rock_3.avif",
+     "x": -202,
+     "y": -159,
+     "w": 28,
+     "h": 19
+    }
+   },
+   {
+    "id": "tree_4",
+    "kind": "tree",
+    "foot": [
+     63.0,
+     -115.0
+    ],
+    "z": -115.0,
+    "area": 137,
+    "body": {
+     "file": "layers/fish_0/obj_tree_4.avif",
+     "x": 54,
+     "y": -129,
+     "w": 21,
+     "h": 16
+    }
+   },
+   {
+    "id": "tree_2",
+    "kind": "tree",
+    "foot": [
+     152.5,
+     -101.0
+    ],
+    "z": -101.0,
+    "area": 4549,
+    "body": {
+     "file": "layers/fish_0/obj_tree_2.avif",
+     "x": 70,
+     "y": -207,
+     "w": 98,
+     "h": 109
+    }
+   },
+   {
+    "id": "tree_3",
+    "kind": "tree",
+    "foot": [
+     185.0,
+     -101.0
+    ],
+    "z": -101.0,
+    "area": 1639,
+    "body": {
+     "file": "layers/fish_0/obj_tree_3.avif",
+     "x": 159,
+     "y": -162,
+     "w": 52,
+     "h": 64
+    }
+   },
+   {
+    "id": "rock_4",
+    "kind": "rock",
+    "foot": [
+     -34.0,
+     -68.0
+    ],
+    "z": -68.0,
+    "area": 1659,
+    "body": {
+     "file": "layers/fish_0/obj_rock_4.avif",
+     "x": -64,
+     "y": -113,
+     "w": 63,
+     "h": 48
+    }
+   },
+   {
+    "id": "rock_5",
+    "kind": "rock",
+    "foot": [
+     69.0,
+     -68.0
+    ],
+    "z": -68.0,
+    "area": 246,
+    "body": {
+     "file": "layers/fish_0/obj_rock_5.avif",
+     "x": 57,
+     "y": -85,
+     "w": 27,
+     "h": 20
+    }
+   },
+   {
+    "id": "rock_2",
+    "kind": "rock",
+    "foot": [
+     -140.0,
+     -63.0
+    ],
+    "z": -63.0,
+    "area": 9339,
+    "body": {
+     "file": "layers/fish_0/obj_rock_2.avif",
+     "x": -209,
+     "y": -172,
+     "w": 145,
+     "h": 111
+    }
+   },
+   {
+    "id": "rock_6",
+    "kind": "rock",
+    "foot": [
+     89.0,
+     -62.0
+    ],
+    "z": -62.0,
+    "area": 96,
+    "body": {
+     "file": "layers/fish_0/obj_rock_6.avif",
+     "x": 81,
+     "y": -72,
+     "w": 18,
+     "h": 13
+    }
+   },
+   {
+    "id": "rock_7",
+    "kind": "rock",
+    "foot": [
+     6.5,
+     -52.0
+    ],
+    "z": -52.0,
+    "area": 213,
+    "body": {
+     "file": "layers/fish_0/obj_rock_7.avif",
+     "x": -7,
+     "y": -67,
+     "w": 27,
+     "h": 18
+    }
+   },
+   {
+    "id": "rock_8",
+    "kind": "rock",
+    "foot": [
+     -162.0,
+     -7.0
+    ],
+    "z": -7.0,
+    "area": 1201,
+    "body": {
+     "file": "layers/fish_0/obj_rock_8.avif",
+     "x": -196,
+     "y": -43,
+     "w": 58,
+     "h": 39
+    }
+   },
+   {
+    "id": "tree_5",
+    "kind": "tree",
+    "foot": [
+     191.0,
+     1.0
+    ],
+    "z": 1.0,
+    "area": 3091,
+    "body": {
+     "file": "layers/fish_0/obj_tree_5.avif",
+     "x": 163,
+     "y": -77,
+     "w": 75,
+     "h": 81
+    }
+   },
+   {
+    "id": "tree_6",
+    "kind": "tree",
+    "foot": [
+     145.0,
+     34.0
+    ],
+    "z": 34.0,
+    "area": 1081,
+    "body": {
+     "file": "layers/fish_0/obj_tree_6.avif",
+     "x": 123,
+     "y": -7,
+     "w": 52,
+     "h": 44
+    }
+   },
+   {
+    "id": "rock_9",
+    "kind": "rock",
+    "foot": [
+     89.0,
+     56.0
+    ],
+    "z": 56.0,
+    "area": 1007,
+    "body": {
+     "file": "layers/fish_0/obj_rock_9.avif",
+     "x": 65,
+     "y": 22,
+     "w": 51,
+     "h": 37
+    }
+   },
+   {
+    "id": "rock_10",
+    "kind": "rock",
+    "foot": [
+     203.0,
+     90.0
+    ],
+    "z": 90.0,
+    "area": 2410,
+    "body": {
+     "file": "layers/fish_0/obj_rock_10.avif",
+     "x": 142,
+     "y": 39,
+     "w": 90,
+     "h": 54
+    }
+   },
+   {
+    "id": "rock_11",
+    "kind": "rock",
+    "foot": [
+     -117.0,
+     132.0
+    ],
+    "z": 132.0,
+    "area": 4705,
+    "body": {
+     "file": "layers/fish_0/obj_rock_11.avif",
+     "x": -184,
+     "y": 57,
+     "w": 110,
+     "h": 78
+    }
+   },
+   {
+    "id": "rock_13",
+    "kind": "rock",
+    "foot": [
+     149.0,
+     174.0
+    ],
+    "z": 174.0,
+    "area": 868,
+    "body": {
+     "file": "layers/fish_0/obj_rock_13.avif",
+     "x": 127,
+     "y": 142,
+     "w": 44,
+     "h": 35
+    }
+   },
+   {
+    "id": "rock_12",
+    "kind": "rock",
+    "foot": [
+     40.0,
+     184.0
+    ],
+    "z": 184.0,
+    "area": 3763,
+    "body": {
+     "file": "layers/fish_0/obj_rock_12.avif",
+     "x": -27,
+     "y": 127,
+     "w": 110,
+     "h": 60
+    }
+   }
+  ],
+  "water": "layers/fish_0/water.png",
+  "review": {
+   "recomposite_bad": 0.0143,
+   "recomposite_err": 0.0086
+  }
+ },
+ "fish_1": {
+  "w": 502,
+  "h": 575,
+  "ox": 250,
+  "oy": 286,
+  "flat": "hex/fish_1_m.avif",
+  "planes": [
+   {
+    "id": "water",
+    "file": "layers/fish_1/plane_water.avif",
+    "x": -245,
+    "y": -283,
+    "w": 491,
+    "h": 567
+   },
+   {
+    "id": "sand",
+    "file": "layers/fish_1/plane_sand.avif",
+    "x": -217,
+    "y": -283,
+    "w": 463,
+    "h": 534
+   },
+   {
+    "id": "ground",
+    "file": "layers/fish_1/plane_ground.avif",
+    "x": -213,
+    "y": -280,
+    "w": 459,
+    "h": 510
+   },
+   {
+    "id": "road",
+    "file": "layers/fish_1/plane_road.avif",
+    "x": -155,
+    "y": -217,
+    "w": 401,
+    "h": 326
+   }
+  ],
+  "objects": [
+   {
+    "id": "tree_1",
+    "kind": "tree",
+    "foot": [
+     25.0,
+     -153.0
+    ],
+    "z": -153.0,
+    "area": 6510,
+    "body": {
+     "file": "layers/fish_1/obj_tree_1.avif",
+     "x": -56,
+     "y": -250,
+     "w": 122,
+     "h": 100
+    }
+   },
+   {
+    "id": "tree_3",
+    "kind": "tree",
+    "foot": [
+     -127.0,
+     -135.0
+    ],
+    "z": -135.0,
+    "area": 1680,
+    "body": {
+     "file": "layers/fish_1/obj_tree_3.avif",
+     "x": -171,
+     "y": -180,
+     "w": 74,
+     "h": 48
+    }
+   },
+   {
+    "id": "tree_2",
+    "kind": "tree",
+    "foot": [
+     107.0,
+     -125.0
+    ],
+    "z": -125.0,
+    "area": 2361,
+    "body": {
+     "file": "layers/fish_1/obj_tree_2.avif",
+     "x": 73,
+     "y": -206,
+     "w": 57,
+     "h": 84
+    }
+   },
+   {
+    "id": "rock_1",
+    "kind": "rock",
+    "foot": [
+     -178.0,
+     -95.0
+    ],
+    "z": -95.0,
+    "area": 500,
+    "body": {
+     "file": "layers/fish_1/obj_rock_1.avif",
+     "x": -223,
+     "y": -158,
+     "w": 53,
+     "h": 67
+    }
+   },
+   {
+    "id": "tree_4",
+    "kind": "tree",
+    "foot": [
+     200.5,
+     -68.0
+    ],
+    "z": -68.0,
+    "area": 5657,
+    "body": {
+     "file": "layers/fish_1/obj_tree_4.avif",
+     "x": 133,
+     "y": -164,
+     "w": 99,
+     "h": 98
+    }
+   },
+   {
+    "id": "rock_3",
+    "kind": "rock",
+    "foot": [
+     -168.0,
+     -63.0
+    ],
+    "z": -63.0,
+    "area": 182,
+    "body": {
+     "file": "layers/fish_1/obj_rock_3.avif",
+     "x": -179,
+     "y": -77,
+     "w": 24,
+     "h": 17
+    }
+   },
+   {
+    "id": "rock_2",
+    "kind": "rock",
+    "foot": [
+     -206.0,
+     -60.0
+    ],
+    "z": -60.0,
+    "area": 770,
+    "body": {
+     "file": "layers/fish_1/obj_rock_2.avif",
+     "x": -227,
+     "y": -92,
+     "w": 43,
+     "h": 35
+    }
+   },
+   {
+    "id": "dock",
+    "kind": "dock",
+    "body": {
+     "id": "frame",
+     "kind": "dock",
+     "file": "layers/fish_1/obj_dock__frame.avif",
+     "x": -223,
+     "y": 28,
+     "w": 273,
+     "h": 120
+    },
+    "parts": [
+     {
+      "id": "pile_b1",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_b1.avif",
+      "x": -185,
+      "y": -28,
+      "w": 25,
+      "h": 75
+     },
+     {
+      "id": "deck_1_1",
+      "kind": "deck",
+      "file": "layers/fish_1/obj_dock__deck_1_1.avif",
+      "x": -224,
+      "y": -11,
+      "w": 104,
+      "h": 62
+     },
+     {
+      "id": "deck_1_2",
+      "kind": "deck",
+      "file": "layers/fish_1/obj_dock__deck_1_2.avif",
+      "x": -173,
+      "y": 7,
+      "w": 104,
+      "h": 63
+     },
+     {
+      "id": "deck_1_3",
+      "kind": "deck",
+      "file": "layers/fish_1/obj_dock__deck_1_3.avif",
+      "x": -123,
+      "y": 26,
+      "w": 105,
+      "h": 62
+     },
+     {
+      "id": "deck_1_4",
+      "kind": "deck",
+      "file": "layers/fish_1/obj_dock__deck_1_4.avif",
+      "x": -72,
+      "y": 45,
+      "w": 104,
+      "h": 62
+     },
+     {
+      "id": "deck_1_5",
+      "kind": "deck",
+      "file": "layers/fish_1/obj_dock__deck_1_5.avif",
+      "x": -21,
+      "y": 63,
+      "w": 70,
+      "h": 50
+     },
+     {
+      "id": "pile_f1",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f1.avif",
+      "x": -227,
+      "y": -1,
+      "w": 24,
+      "h": 75
+     },
+     {
+      "id": "pile_f2",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f2.avif",
+      "x": -187,
+      "y": 20,
+      "w": 24,
+      "h": 69
+     },
+     {
+      "id": "pile_f3",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f3.avif",
+      "x": -143,
+      "y": 36,
+      "w": 24,
+      "h": 69
+     },
+     {
+      "id": "pile_f4",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f4.avif",
+      "x": -99,
+      "y": 52,
+      "w": 24,
+      "h": 69
+     },
+     {
+      "id": "pile_f5",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f5.avif",
+      "x": -55,
+      "y": 68,
+      "w": 24,
+      "h": 69
+     },
+     {
+      "id": "pile_f6",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f6.avif",
+      "x": -15,
+      "y": 77,
+      "w": 24,
+      "h": 75
+     },
+     {
+      "id": "pile_f7",
+      "kind": "post",
+      "file": "layers/fish_1/obj_dock__pile_f7.avif",
+      "x": 27,
+      "y": 51,
+      "w": 25,
+      "h": 75
+     }
+    ],
+    "rebuilt": "dock",
+    "params": {
+     "origin": [
+      29.0,
+      307.0
+     ],
+     "au": -20.25,
+     "av": 31.9375,
+     "segments": [
+      [
+       0.0,
+       233.5,
+       -0.5,
+       56.25
+      ]
+     ],
+     "fit_iou": 0.7014
+    },
+    "foot": [
+     -3.0,
+     150.0
+    ],
+    "z": -50.0,
+    "area": 18075
+   },
+   {
+    "id": "bush_back",
+    "kind": "bush",
+    "foot": [
+     -32.5,
+     -36.0
+    ],
+    "z": -36.0,
+    "area": 700,
+    "body": {
+     "file": "layers/fish_1/obj_bush_back.avif",
+     "x": -59,
+     "y": -74,
+     "w": 34,
+     "h": 40
+    }
+   },
+   {
+    "id": "fence",
+    "kind": "fence",
+    "foot": [
+     121.0,
+     -2.0
+    ],
+    "z": -2.0,
+    "area": 930,
+    "body": {
+     "file": "layers/fish_1/obj_fence.avif",
+     "x": 95,
+     "y": -46,
+     "w": 38,
+     "h": 46
+    }
+   },
+   {
+    "id": "rack",
+    "kind": "rack",
+    "foot": [
+     -124.0,
+     7.0
+    ],
+    "z": 7.0,
+    "area": 10458,
+    "body": {
+     "file": "layers/fish_1/obj_rack.avif",
+     "x": -161,
+     "y": -144,
+     "w": 147,
+     "h": 153
+    }
+   },
+   {
+    "id": "goods_back",
+    "kind": "crate",
+    "foot": [
+     -50.0,
+     8.0
+    ],
+    "z": 8.0,
+    "area": 2529,
+    "body": {
+     "file": "layers/fish_1/obj_goods_back.avif",
+     "x": -86,
+     "y": -52,
+     "w": 66,
+     "h": 63
+    }
+   },
+   {
+    "id": "bush_house",
+    "kind": "bush",
+    "foot": [
+     58.0,
+     15.0
+    ],
+    "z": 15.0,
+    "area": 286,
+    "body": {
+     "file": "layers/fish_1/obj_bush_house.avif",
+     "x": 54,
+     "y": -19,
+     "w": 24,
+     "h": 36
+    }
+   },
+   {
+    "id": "crate_small",
+    "kind": "crate",
+    "foot": [
+     -9.0,
+     20.0
+    ],
+    "z": 20.0,
+    "area": 992,
+    "body": {
+     "file": "layers/fish_1/obj_crate_small.avif",
+     "x": -37,
+     "y": -15,
+     "w": 50,
+     "h": 38
+    }
+   },
+   {
+    "id": "house",
+    "kind": "building",
+    "foot": [
+     42.0,
+     32.0
+    ],
+    "z": 32.0,
+    "area": 12621,
+    "body": {
+     "file": "layers/fish_1/obj_house.avif",
+     "x": -32,
+     "y": -130,
+     "w": 139,
+     "h": 165
+    },
+    "parts": [
+     {
+      "file": "layers/fish_1/obj_house__chimney.avif",
+      "x": 8,
+      "y": -129,
+      "w": 34,
+      "h": 46,
+      "id": "chimney"
+     },
+     {
+      "file": "layers/fish_1/obj_house__roof.avif",
+      "x": -29,
+      "y": -109,
+      "w": 107,
+      "h": 82,
+      "id": "roof"
+     },
+     {
+      "file": "layers/fish_1/obj_house__door.avif",
+      "x": 11,
+      "y": -17,
+      "w": 26,
+      "h": 45,
+      "id": "door"
+     },
+     {
+      "file": "layers/fish_1/obj_house__windows.avif",
+      "x": -19,
+      "y": -40,
+      "w": 33,
+      "h": 27,
+      "id": "windows"
+     }
+    ]
+   },
+   {
+    "id": "barrels_dock",
+    "kind": "barrel",
+    "foot": [
+     -111.0,
+     40.0
+    ],
+    "z": 40.0,
+    "area": 940,
+    "body": {
+     "file": "layers/fish_1/obj_barrels_dock.avif",
+     "x": -122,
+     "y": -6,
+     "w": 32,
+     "h": 48
+    }
+   },
+   {
+    "id": "barrel_stall",
+    "kind": "barrel",
+    "foot": [
+     63.0,
+     43.0
+    ],
+    "z": 43.0,
+    "area": 463,
+    "body": {
+     "file": "layers/fish_1/obj_barrel_stall.avif",
+     "x": 45,
+     "y": 15,
+     "w": 32,
+     "h": 31
+    }
+   },
+   {
+    "id": "stall",
+    "kind": "stall",
+    "foot": [
+     86.5,
+     44.0
+    ],
+    "z": 44.0,
+    "area": 2670,
+    "body": {
+     "file": "layers/fish_1/obj_stall.avif",
+     "x": 60,
+     "y": -14,
+     "w": 73,
+     "h": 61
+    }
+   },
+   {
+    "id": "tree_5",
+    "kind": "tree",
+    "foot": [
+     226.5,
+     45.0
+    ],
+    "z": 45.0,
+    "area": 1265,
+    "body": {
+     "file": "layers/fish_1/obj_tree_5.avif",
+     "x": 203,
+     "y": -7,
+     "w": 43,
+     "h": 54
+    }
+   },
+   {
+    "id": "crate_fish",
+    "kind": "crate",
+    "foot": [
+     -42.0,
+     70.0
+    ],
+    "z": 70.0,
+    "area": 3070,
+    "body": {
+     "file": "layers/fish_1/obj_crate_fish.avif",
+     "x": -88,
+     "y": 12,
+     "w": 85,
+     "h": 60
+    }
+   },
+   {
+    "id": "tree_stall",
+    "kind": "tree",
+    "foot": [
+     121.5,
+     81.0
+    ],
+    "z": 81.0,
+    "area": 1746,
+    "body": {
+     "file": "layers/fish_1/obj_tree_stall.avif",
+     "x": 93,
+     "y": 27,
+     "w": 57,
+     "h": 57
+    }
+   },
+   {
+    "id": "rock_4",
+    "kind": "rock",
+    "foot": [
+     -179.0,
+     130.0
+    ],
+    "z": 130.0,
+    "area": 1240,
+    "body": {
+     "file": "layers/fish_1/obj_rock_4.avif",
+     "x": -207,
+     "y": 91,
+     "w": 54,
+     "h": 42
+    }
+   },
+   {
+    "id": "rock_6",
+    "kind": "rock",
+    "foot": [
+     186.0,
+     157.0
+    ],
+    "z": 157.0,
+    "area": 460,
+    "body": {
+     "file": "layers/fish_1/obj_rock_6.avif",
+     "x": 154,
+     "y": 132,
+     "w": 43,
+     "h": 28
+    }
+   },
+   {
+    "id": "rock_7",
+    "kind": "rock",
+    "foot": [
+     -120.0,
+     163.0
+    ],
+    "z": 163.0,
+    "area": 512,
+    "body": {
+     "file": "layers/fish_1/obj_rock_7.avif",
+     "x": -138,
+     "y": 137,
+     "w": 35,
+     "h": 29
+    }
+   },
+   {
+    "id": "rock_8",
+    "kind": "rock",
+    "foot": [
+     -17.0,
+     203.0
+    ],
+    "z": 203.0,
+    "area": 160,
+    "body": {
+     "file": "layers/fish_1/obj_rock_8.avif",
+     "x": -27,
+     "y": 188,
+     "w": 21,
+     "h": 18
+    }
+   },
+   {
+    "id": "rock_5",
+    "kind": "rock",
+    "foot": [
+     44.0,
+     220.0
+    ],
+    "z": 220.0,
+    "area": 8575,
+    "body": {
+     "file": "layers/fish_1/obj_rock_5.avif",
+     "x": -7,
+     "y": 125,
+     "w": 162,
+     "h": 99
+    }
+   }
+  ],
+  "water": "layers/fish_1/water.png",
+  "review": {
+   "recomposite_bad": 0.0912,
+   "recomposite_err": 0.0452
+  }
+ },
+ "fish_2": {
+  "w": 504,
+  "h": 575,
+  "ox": 251,
+  "oy": 286,
+  "flat": "hex/fish_2_m.avif",
+  "planes": [
+   {
+    "id": "water",
+    "file": "layers/fish_2/plane_water.avif",
+    "x": -245,
+    "y": -283,
+    "w": 491,
+    "h": 567
+   },
+   {
+    "id": "sand",
+    "file": "layers/fish_2/plane_sand.avif",
+    "x": -225,
+    "y": -283,
+    "w": 471,
+    "h": 506
+   },
+   {
+    "id": "ground",
+    "file": "layers/fish_2/plane_ground.avif",
+    "x": -210,
+    "y": -282,
+    "w": 456,
+    "h": 486
+   },
+   {
+    "id": "road",
+    "file": "layers/fish_2/plane_road.avif",
+    "x": -158,
+    "y": -215,
+    "w": 399,
+    "h": 382
+   }
+  ],
+  "objects": [
+   {
+    "id": "rock_1",
+    "kind": "rock",
+    "foot": [
+     -213.0,
+     -132.0
+    ],
+    "z": -132.0,
+    "area": 476,
+    "body": {
+     "file": "layers/fish_2/obj_rock_1.avif",
+     "x": -243,
+     "y": -161,
+     "w": 48,
+     "h": 33
+    }
+   },
+   {
+    "id": "tree_2",
+    "kind": "tree",
+    "foot": [
+     -116.0,
+     -130.0
+    ],
+    "z": -130.0,
+    "area": 2064,
+    "body": {
+     "file": "layers/fish_2/obj_tree_2.avif",
+     "x": -170,
+     "y": -179,
+     "w": 86,
+     "h": 51
+    }
+   },
+   {
+    "id": "pine_l",
+    "kind": "tree",
+    "foot": [
+     -50.5,
+     -101.0
+    ],
+    "z": -101.0,
+    "area": 1436,
+    "body": {
+     "file": "layers/fish_2/obj_pine_l.avif",
+     "x": -68,
+     "y": -166,
+     "w": 49,
+     "h": 69
+    }
+   },
+   {
+    "id": "tree_lighthouse_l",
+    "kind": "tree",
+    "foot": [
+     39.0,
+     -83.0
+    ],
+    "z": -83.0,
+    "area": 906,
+    "body": {
+     "file": "layers/fish_2/obj_tree_lighthouse_l.avif",
+     "x": 17,
+     "y": -147,
+     "w": 35,
+     "h": 66
+    }
+   },
+   {
+    "id": "rocks_lighthouse",
+    "kind": "rock",
+    "foot": [
+     130.0,
+     -70.0
+    ],
+    "z": -70.0,
+    "area": 747,
+    "body": {
+     "file": "layers/fish_2/obj_rocks_lighthouse.avif",
+     "x": 120,
+     "y": -108,
+     "w": 42,
+     "h": 40
+    }
+   },
+   {
+    "id": "rock_2",
+    "kind": "rock",
+    "foot": [
+     -207.0,
+     -65.0
+    ],
+    "z": -65.0,
+    "area": 490,
+    "body": {
+     "file": "layers/fish_2/obj_rock_2.avif",
+     "x": -225,
+     "y": -90,
+     "w": 35,
+     "h": 29
+    }
+   },
+   {
+    "id": "dock",
+    "kind": "dock",
+    "body": {
+     "id": "frame",
+     "kind": "dock",
+     "file": "layers/fish_2/obj_dock__frame.avif",
+     "x": -248,
+     "y": 35,
+     "w": 340,
+     "h": 161
+    },
+    "parts": [
+     {
+      "id": "pile_b1",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_b1.avif",
+      "x": -180,
+      "y": -32,
+      "w": 18,
+      "h": 67
+     },
+     {
+      "id": "pile_b2",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_b2.avif",
+      "x": -111,
+      "y": -1,
+      "w": 17,
+      "h": 68
+     },
+     {
+      "id": "pile_b3",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_b3.avif",
+      "x": -125,
+      "y": 7,
+      "w": 17,
+      "h": 67
+     },
+     {
+      "id": "pile_b4",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_b4.avif",
+      "x": -10,
+      "y": 43,
+      "w": 18,
+      "h": 67
+     },
+     {
+      "id": "pile_b5",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_b5.avif",
+      "x": -27,
+      "y": 52,
+      "w": 18,
+      "h": 68
+     },
+     {
+      "id": "deck_1_1",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_1_1.avif",
+      "x": -251,
+      "y": -16,
+      "w": 132,
+      "h": 79
+     },
+     {
+      "id": "deck_1_2",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_1_2.avif",
+      "x": -202,
+      "y": 7,
+      "w": 105,
+      "h": 66
+     },
+     {
+      "id": "deck_2_1",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_2_1.avif",
+      "x": -179,
+      "y": 25,
+      "w": 117,
+      "h": 71
+     },
+     {
+      "id": "deck_2_2",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_2_2.avif",
+      "x": -130,
+      "y": 47,
+      "w": 117,
+      "h": 72
+     },
+     {
+      "id": "deck_3_1",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_3_1.avif",
+      "x": -81,
+      "y": 60,
+      "w": 135,
+      "h": 81
+     },
+     {
+      "id": "deck_3_2",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_3_2.avif",
+      "x": -32,
+      "y": 83,
+      "w": 135,
+      "h": 81
+     },
+     {
+      "id": "deck_3_3",
+      "kind": "deck",
+      "file": "layers/fish_2/obj_dock__deck_3_3.avif",
+      "x": 17,
+      "y": 106,
+      "w": 89,
+      "h": 59
+     },
+     {
+      "id": "pile_f1",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f1.avif",
+      "x": -251,
+      "y": 7,
+      "w": 21,
+      "h": 71
+     },
+     {
+      "id": "pile_f2",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f2.avif",
+      "x": -221,
+      "y": 28,
+      "w": 24,
+      "h": 65
+     },
+     {
+      "id": "pile_f3",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f3.avif",
+      "x": -186,
+      "y": 39,
+      "w": 25,
+      "h": 71
+     },
+     {
+      "id": "pile_f4",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f4.avif",
+      "x": -137,
+      "y": 67,
+      "w": 25,
+      "h": 65
+     },
+     {
+      "id": "pile_f5",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f5.avif",
+      "x": -87,
+      "y": 84,
+      "w": 24,
+      "h": 71
+     },
+     {
+      "id": "pile_f6",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f6.avif",
+      "x": -37,
+      "y": 113,
+      "w": 24,
+      "h": 65
+     },
+     {
+      "id": "pile_f7",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f7.avif",
+      "x": 10,
+      "y": 129,
+      "w": 24,
+      "h": 71
+     },
+     {
+      "id": "pile_f8",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f8.avif",
+      "x": 44,
+      "y": 116,
+      "w": 24,
+      "h": 65
+     },
+     {
+      "id": "pile_f9",
+      "kind": "post",
+      "file": "layers/fish_2/obj_dock__pile_f9.avif",
+      "x": 88,
+      "y": 88,
+      "w": 17,
+      "h": 67
+     }
+    ],
+    "rebuilt": "dock",
+    "params": {
+     "origin": [
+      29,
+      302.5
+     ],
+     "au": -24.8,
+     "av": 29.0,
+     "segments": [
+      [
+       -2,
+       77,
+       -28,
+       60
+      ],
+      [
+       77,
+       185,
+       -28,
+       44
+      ],
+      [
+       185,
+       296,
+       -28,
+       64
+      ]
+     ]
+    },
+    "foot": [
+     22.0,
+     198.0
+    ],
+    "z": -62.0,
+    "area": 30607
+   },
+   {
+    "id": "tree_lighthouse_r",
+    "kind": "tree",
+    "foot": [
+     177.0,
+     -54.0
+    ],
+    "z": -54.0,
+    "area": 5554,
+    "body": {
+     "file": "layers/fish_2/obj_tree_lighthouse_r.avif",
+     "x": 127,
+     "y": -168,
+     "w": 102,
+     "h": 116
+    }
+   },
+   {
+    "id": "lighthouse",
+    "kind": "tower",
+    "foot": [
+     65.0,
+     -53.0
+    ],
+    "z": -53.0,
+    "area": 11443,
+    "body": {
+     "file": "layers/fish_2/obj_lighthouse.avif",
+     "x": 39,
+     "y": -246,
+     "w": 99,
+     "h": 195
+    },
+    "parts": [
+     {
+      "file": "layers/fish_2/obj_lighthouse__lantern.avif",
+      "x": 45,
+      "y": -245,
+      "w": 74,
+      "h": 83,
+      "id": "lantern"
+     }
+    ]
+   },
+   {
+    "id": "rock_mid",
+    "kind": "rock",
+    "foot": [
+     70.0,
+     -26.0
+    ],
+    "z": -26.0,
+    "area": 884,
+    "body": {
+     "file": "layers/fish_2/obj_rock_mid.avif",
+     "x": 64,
+     "y": -72,
+     "w": 45,
+     "h": 48
+    }
+   },
+   {
+    "id": "crate_small",
+    "kind": "crate",
+    "foot": [
+     -121.0,
+     12.0
+    ],
+    "z": 12.0,
+    "area": 447,
+    "body": {
+     "file": "layers/fish_2/obj_crate_small.avif",
+     "x": -135,
+     "y": -17,
+     "w": 30,
+     "h": 31
+    }
+   },
+   {
+    "id": "rack_land",
+    "kind": "rack",
+    "foot": [
+     -171.0,
+     14.0
+    ],
+    "z": 14.0,
+    "area": 9865,
+    "body": {
+     "file": "layers/fish_2/obj_rack_land.avif",
+     "x": -201,
+     "y": -117,
+     "w": 141,
+     "h": 133
+    }
+   },
+   {
+    "id": "barrels_land",
+    "kind": "barrel",
+    "foot": [
+     -101.0,
+     21.0
+    ],
+    "z": 21.0,
+    "area": 1134,
+    "body": {
+     "file": "layers/fish_2/obj_barrels_land.avif",
+     "x": -114,
+     "y": -25,
+     "w": 46,
+     "h": 48
+    }
+   },
+   {
+    "id": "house_a",
+    "kind": "building",
+    "foot": [
+     -2.5,
+     28.0
+    ],
+    "z": 28.0,
+    "area": 13573,
+    "body": {
+     "file": "layers/fish_2/obj_house_a.avif",
+     "x": -79,
+     "y": -133,
+     "w": 147,
+     "h": 163
+    },
+    "parts": [
+     {
+      "file": "layers/fish_2/obj_house_a__chimney.avif",
+      "x": -40,
+      "y": -128,
+      "w": 41,
+      "h": 48,
+      "id": "chimney"
+     },
+     {
+      "file": "layers/fish_2/obj_house_a__roof.avif",
+      "x": -77,
+      "y": -109,
+      "w": 134,
+      "h": 87,
+      "id": "roof"
+     }
+    ]
+   },
+   {
+    "id": "barrel_stall_a",
+    "kind": "barrel",
+    "foot": [
+     4.5,
+     32.0
+    ],
+    "z": 32.0,
+    "area": 563,
+    "body": {
+     "file": "layers/fish_2/obj_barrel_stall_a.avif",
+     "x": -1,
+     "y": 2,
+     "w": 29,
+     "h": 34
+    }
+   },
+   {
+    "id": "crate_land",
+    "kind": "crate",
+    "foot": [
+     -55.0,
+     33.0
+    ],
+    "z": 33.0,
+    "area": 1382,
+    "body": {
+     "file": "layers/fish_2/obj_crate_land.avif",
+     "x": -85,
+     "y": -9,
+     "w": 50,
+     "h": 44
+    }
+   },
+   {
+    "id": "stall_a",
+    "kind": "stall",
+    "foot": [
+     64.5,
+     49.0
+    ],
+    "z": 49.0,
+    "area": 3162,
+    "body": {
+     "file": "layers/fish_2/obj_stall_a.avif",
+     "x": 19,
+     "y": -29,
+     "w": 64,
+     "h": 80
+    }
+   },
+   {
+    "id": "rock_right",
+    "kind": "rock",
+    "foot": [
+     242.0,
+     49.0
+    ],
+    "z": 49.0,
+    "area": 3524,
+    "body": {
+     "file": "layers/fish_2/obj_rock_right.avif",
+     "x": 187,
+     "y": -66,
+     "w": 60,
+     "h": 119
+    }
+   },
+   {
+    "id": "tree_1",
+    "kind": "tree",
+    "foot": [
+     206.0,
+     67.0
+    ],
+    "z": 67.0,
+    "area": 9712,
+    "body": {
+     "file": "layers/fish_2/obj_tree_1.avif",
+     "x": -130,
+     "y": -257,
+     "w": 374,
+     "h": 328
+    }
+   },
+   {
+    "id": "house_b",
+    "kind": "building",
+    "foot": [
+     117.0,
+     71.0
+    ],
+    "z": 71.0,
+    "area": 12635,
+    "body": {
+     "file": "layers/fish_2/obj_house_b.avif",
+     "x": 69,
+     "y": -89,
+     "w": 134,
+     "h": 163
+    },
+    "parts": [
+     {
+      "file": "layers/fish_2/obj_house_b__chimney.avif",
+      "x": 136,
+      "y": -89,
+      "w": 32,
+      "h": 52,
+      "id": "chimney"
+     },
+     {
+      "file": "layers/fish_2/obj_house_b__roof.avif",
+      "x": 72,
+      "y": -67,
+      "w": 127,
+      "h": 81,
+      "id": "roof"
+     }
+    ]
+   },
+   {
+    "id": "barrel_house_b",
+    "kind": "barrel",
+    "foot": [
+     131.0,
+     87.0
+    ],
+    "z": 87.0,
+    "area": 536,
+    "body": {
+     "file": "layers/fish_2/obj_barrel_house_b.avif",
+     "x": 112,
+     "y": 55,
+     "w": 34,
+     "h": 35
+    }
+   },
+   {
+    "id": "stall_b",
+    "kind": "stall",
+    "foot": [
+     179.0,
+     94.0
+    ],
+    "z": 94.0,
+    "area": 3495,
+    "body": {
+     "file": "layers/fish_2/obj_stall_b.avif",
+     "x": 135,
+     "y": 19,
+     "w": 72,
+     "h": 79
+    }
+   },
+   {
+    "id": "crate_fish",
+    "kind": "crate",
+    "foot": [
+     -52.5,
+     99.0
+    ],
+    "z": 99.0,
+    "area": 3231,
+    "body": {
+     "file": "layers/fish_2/obj_crate_fish.avif",
+     "x": -104,
+     "y": 42,
+     "w": 94,
+     "h": 59
+    }
+   },
+   {
+    "id": "barrel_stall_b",
+    "kind": "barrel",
+    "foot": [
+     191.0,
+     102.0
+    ],
+    "z": 102.0,
+    "area": 205,
+    "body": {
+     "file": "layers/fish_2/obj_barrel_stall_b.avif",
+     "x": 171,
+     "y": 87,
+     "w": 30,
+     "h": 19
+    }
+   },
+   {
+    "id": "tree_3",
+    "kind": "tree",
+    "foot": [
+     219.0,
+     110.0
+    ],
+    "z": 110.0,
+    "area": 1117,
+    "body": {
+     "file": "layers/fish_2/obj_tree_3.avif",
+     "x": 188,
+     "y": 62,
+     "w": 53,
+     "h": 51
+    }
+   },
+   {
+    "id": "barrel_dock",
+    "kind": "barrel",
+    "foot": [
+     -24.0,
+     112.0
+    ],
+    "z": 112.0,
+    "area": 396,
+    "body": {
+     "file": "layers/fish_2/obj_barrel_dock.avif",
+     "x": -38,
+     "y": 74,
+     "w": 32,
+     "h": 40
+    }
+   },
+   {
+    "id": "rack_dock",
+    "kind": "rack",
+    "foot": [
+     54.0,
+     126.0
+    ],
+    "z": 126.0,
+    "area": 5339,
+    "body": {
+     "file": "layers/fish_2/obj_rack_dock.avif",
+     "x": -9,
+     "y": 39,
+     "w": 105,
+     "h": 89
+    }
+   },
+   {
+    "id": "rock_3",
+    "kind": "rock",
+    "foot": [
+     -203.0,
+     131.0
+    ],
+    "z": 131.0,
+    "area": 1428,
+    "body": {
+     "file": "layers/fish_2/obj_rock_3.avif",
+     "x": -232,
+     "y": 90,
+     "w": 59,
+     "h": 44
+    }
+   },
+   {
+    "id": "rock_4",
+    "kind": "rock",
+    "foot": [
+     -136.0,
+     168.0
+    ],
+    "z": 168.0,
+    "area": 757,
+    "body": {
+     "file": "layers/fish_2/obj_rock_4.avif",
+     "x": -159,
+     "y": 137,
+     "w": 43,
+     "h": 34
+    }
+   },
+   {
+    "id": "rock_5",
+    "kind": "rock",
+    "foot": [
+     100.0,
+     214.0
+    ],
+    "z": 214.0,
+    "area": 3218,
+    "body": {
+     "file": "layers/fish_2/obj_rock_5.avif",
+     "x": 82,
+     "y": 146,
+     "w": 97,
+     "h": 71
+    }
+   },
+   {
+    "id": "rock_6",
+    "kind": "rock",
+    "foot": [
+     57.0,
+     222.0
+    ],
+    "z": 222.0,
+    "area": 705,
+    "body": {
+     "file": "layers/fish_2/obj_rock_6.avif",
+     "x": 38,
+     "y": 190,
+     "w": 39,
+     "h": 34
+    }
+   }
+  ],
+  "water": "layers/fish_2/water.png",
+  "review": {
+   "recomposite_bad": 0.1105,
+   "recomposite_err": 0.0546
+  }
+ }
+}

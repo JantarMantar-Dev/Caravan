@@ -1,0 +1,194 @@
+{
+ "assets": {
+  "fish_0": {
+   "ssim": 0.9869,
+   "dE": 1.37,
+   "dE95": 3.54,
+   "sharp": 0.844,
+   "ink": 0.977,
+   "holes": 0.00163
+  },
+  "fish_1": {
+   "ssim": 0.9877,
+   "dE": 1.71,
+   "dE95": 4.45,
+   "sharp": 0.863,
+   "ink": 0.976,
+   "holes": 0.00099
+  },
+  "fish_2": {
+   "ssim": 0.9887,
+   "dE": 1.89,
+   "dE95": 4.75,
+   "sharp": 0.863,
+   "ink": 0.977,
+   "holes": 0.00123
+  },
+  "fish_icon": {
+   "ssim": 0.9963,
+   "dE": 1.17,
+   "dE95": 2.86,
+   "sharp": 0.991,
+   "ink": 0.996,
+   "holes": 0.0008
+  },
+  "fish_wagon": {
+   "ssim": 0.9953,
+   "dE": 1.28,
+   "dE95": 3.03,
+   "sharp": 0.989,
+   "ink": 0.994,
+   "holes": 0.00026
+  },
+  "apple_0": {
+   "ssim": 0.9874,
+   "dE": 1.57,
+   "dE95": 4.14,
+   "sharp": 0.866,
+   "ink": 0.952,
+   "holes": 7e-05
+  },
+  "apple_1": {
+   "ssim": 0.9885,
+   "dE": 1.75,
+   "dE95": 4.47,
+   "sharp": 0.88,
+   "ink": 0.965,
+   "holes": 2e-05
+  },
+  "apple_2": {
+   "ssim": 0.9877,
+   "dE": 1.88,
+   "dE95": 4.84,
+   "sharp": 0.854,
+   "ink": 0.965,
+   "holes": 5e-05
+  },
+  "apple_icon": {
+   "ssim": 0.993,
+   "dE": 0.84,
+   "dE95": 2.24,
+   "sharp": 0.99,
+   "ink": 0.998,
+   "holes": 0.0
+  },
+  "apple_wagon": {
+   "ssim": 0.9941,
+   "dE": 1.17,
+   "dE95": 2.83,
+   "sharp": 0.99,
+   "ink": 0.976,
+   "holes": 5e-05
+  },
+  "wool_0": {
+   "ssim": 0.9903,
+   "dE": 1.62,
+   "dE95": 3.68,
+   "sharp": 0.887,
+   "ink": 0.959,
+   "holes": 3e-05
+  },
+  "wool_1": {
+   "ssim": 0.9898,
+   "dE": 1.75,
+   "dE95": 4.2,
+   "sharp": 0.87,
+   "ink": 0.97,
+   "holes": 0.00026
+  },
+  "wool_2": {
+   "ssim": 0.9896,
+   "dE": 1.96,
+   "dE95": 4.63,
+   "sharp": 0.859,
+   "ink": 0.966,
+   "holes": 0.00035
+  },
+  "wool_icon": {
+   "ssim": 0.9951,
+   "dE": 0.83,
+   "dE95": 2.27,
+   "sharp": 0.993,
+   "ink": 0.997,
+   "holes": 0.0
+  },
+  "wool_wagon": {
+   "ssim": 0.994,
+   "dE": 0.98,
+   "dE95": 2.32,
+   "sharp": 0.992,
+   "ink": 0.993,
+   "holes": 1e-05
+  },
+  "spice_0": {
+   "ssim": 0.9885,
+   "dE": 1.76,
+   "dE95": 4.45,
+   "sharp": 0.892,
+   "ink": 0.976,
+   "holes": 3e-05
+  },
+  "spice_1": {
+   "ssim": 0.9888,
+   "dE": 1.75,
+   "dE95": 4.53,
+   "sharp": 0.878,
+   "ink": 0.976,
+   "holes": 0.0002
+  },
+  "spice_2": {
+   "ssim": 0.9891,
+   "dE": 1.82,
+   "dE95": 4.53,
+   "sharp": 0.884,
+   "ink": 0.969,
+   "holes": 0.0014
+  },
+  "spice_icon": {
+   "ssim": 0.9912,
+   "dE": 1.21,
+   "dE95": 2.83,
+   "sharp": 0.989,
+   "ink": 0.986,
+   "holes": 3e-05
+  },
+  "spice_wagon": {
+   "ssim": 0.9923,
+   "dE": 1.1,
+   "dE95": 2.53,
+   "sharp": 0.99,
+   "ink": 0.993,
+   "holes": 0.0
+  }
+ },
+ "filler": {
+  "meadow": {
+   "ground_dE": 1.07,
+   "cover": 0.32,
+   "cover_ref": 0.826,
+   "ink_px": 172.4,
+   "ink_px_ref": 88.2
+  },
+  "autumn": {
+   "ground_dE": 1.84,
+   "cover": 0.34,
+   "cover_ref": 0.653,
+   "ink_px": 110.2,
+   "ink_px_ref": 165.3
+  },
+  "moor": {
+   "ground_dE": 1.27,
+   "cover": 0.318,
+   "cover_ref": 0.616,
+   "ink_px": 164.4,
+   "ink_px_ref": 127.9
+  },
+  "jungle": {
+   "ground_dE": 1.0,
+   "cover": 0.345,
+   "cover_ref": 0.828,
+   "ink_px": 182.0,
+   "ink_px_ref": 413.1
+  }
+ }
+}

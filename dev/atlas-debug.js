@@ -1,0 +1,10 @@
+import { bakeAtlas } from '../src/art/atlas.js';
+import { SPRITE_DEFS } from '../src/art/sprites.js';
+const t0 = performance.now();
+const a = bakeAtlas(SPRITE_DEFS);
+const t1 = performance.now();
+document.body.style.background = '#fff';
+document.body.style.margin = '0';
+a.canvas.style.width = (a.width / 2) + 'px';
+document.body.appendChild(a.canvas);
+window.__info = { ms: t1 - t0, w: a.width, h: a.height, n: Object.keys(a.frames).length };

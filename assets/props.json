@@ -1,0 +1,846 @@
+{
+ "props": {
+  "meadow_0": {
+   "file": "props/meadow_0.avif",
+   "biome": "meadow",
+   "w": 147,
+   "h": 113,
+   "ax": 69.0,
+   "ay": 111,
+   "area": 7576,
+   "tile": "fish_0",
+   "src": [
+    43,
+    114
+   ]
+  },
+  "meadow_1": {
+   "file": "props/meadow_1.avif",
+   "biome": "meadow",
+   "w": 125,
+   "h": 101,
+   "ax": 83.0,
+   "ay": 99,
+   "area": 7305,
+   "tile": "fish_1",
+   "src": [
+    196,
+    38
+   ]
+  },
+  "meadow_2": {
+   "file": "props/meadow_2.avif",
+   "biome": "meadow",
+   "w": 99,
+   "h": 104,
+   "ax": 55.0,
+   "ay": 100,
+   "area": 6083,
+   "tile": "fish_1",
+   "src": [
+    385,
+    122
+   ]
+  },
+  "meadow_3": {
+   "file": "props/meadow_3.avif",
+   "biome": "meadow",
+   "w": 107,
+   "h": 100,
+   "ax": 21.0,
+   "ay": 98,
+   "area": 5519,
+   "tile": "fish_0",
+   "src": [
+    178,
+    30
+   ]
+  },
+  "meadow_4": {
+   "file": "props/meadow_4.avif",
+   "biome": "meadow",
+   "w": 99,
+   "h": 110,
+   "ax": 81.0,
+   "ay": 108,
+   "area": 5075,
+   "tile": "fish_0",
+   "src": [
+    323,
+    81
+   ]
+  },
+  "meadow_5": {
+   "file": "props/meadow_5.avif",
+   "biome": "meadow",
+   "w": 77,
+   "h": 82,
+   "ax": 29.0,
+   "ay": 80,
+   "area": 3533,
+   "tile": "fish_0",
+   "src": [
+    416,
+    209
+   ]
+  },
+  "meadow_6": {
+   "file": "props/meadow_6.avif",
+   "biome": "meadow",
+   "w": 66,
+   "h": 86,
+   "ax": 34.0,
+   "ay": 84,
+   "area": 3129,
+   "tile": "fish_1",
+   "src": [
+    325,
+    80
+   ]
+  },
+  "meadow_7": {
+   "file": "props/meadow_7.avif",
+   "biome": "meadow",
+   "w": 67,
+   "h": 54,
+   "ax": 34.0,
+   "ay": 52,
+   "area": 1983,
+   "tile": "fish_2",
+   "src": [
+    82,
+    108
+   ]
+  },
+  "meadow_8": {
+   "file": "props/meadow_8.avif",
+   "biome": "meadow",
+   "w": 54,
+   "h": 65,
+   "ax": 27.0,
+   "ay": 63,
+   "area": 1925,
+   "tile": "fish_0",
+   "src": [
+    412,
+    126
+   ]
+  },
+  "meadow_9": {
+   "file": "props/meadow_9.avif",
+   "biome": "meadow",
+   "w": 60,
+   "h": 50,
+   "ax": 29.0,
+   "ay": 47,
+   "area": 1890,
+   "tile": "fish_1",
+   "src": [
+    80,
+    96
+   ]
+  },
+  "meadow_10": {
+   "file": "props/meadow_10.avif",
+   "biome": "meadow",
+   "w": 45,
+   "h": 58,
+   "ax": 24.0,
+   "ay": 54,
+   "area": 1445,
+   "tile": "fish_1",
+   "src": [
+    455,
+    281
+   ]
+  },
+  "meadow_11": {
+   "file": "props/meadow_11.avif",
+   "biome": "meadow",
+   "w": 52,
+   "h": 46,
+   "ax": 23.0,
+   "ay": 44,
+   "area": 1254,
+   "tile": "fish_0",
+   "src": [
+    376,
+    280
+   ]
+  },
+  "autumn_0": {
+   "file": "props/autumn_0.avif",
+   "biome": "autumn",
+   "w": 186,
+   "h": 162,
+   "ax": 94.0,
+   "ay": 158,
+   "area": 17721,
+   "tile": "apple_0",
+   "src": [
+    21,
+    248
+   ]
+  },
+  "autumn_1": {
+   "file": "props/autumn_1.avif",
+   "biome": "autumn",
+   "w": 172,
+   "h": 166,
+   "ax": 84.0,
+   "ay": 164,
+   "area": 17168,
+   "tile": "apple_0",
+   "src": [
+    203,
+    319
+   ]
+  },
+  "autumn_2": {
+   "file": "props/autumn_2.avif",
+   "biome": "autumn",
+   "w": 187,
+   "h": 147,
+   "ax": 111.0,
+   "ay": 143,
+   "area": 14137,
+   "tile": "apple_1",
+   "src": [
+    110,
+    39
+   ]
+  },
+  "autumn_3": {
+   "file": "props/autumn_3.avif",
+   "biome": "autumn",
+   "w": 250,
+   "h": 122,
+   "ax": 215.0,
+   "ay": 120,
+   "area": 12148,
+   "tile": "apple_0",
+   "src": [
+    221,
+    184
+   ]
+  },
+  "autumn_4": {
+   "file": "props/autumn_4.avif",
+   "biome": "autumn",
+   "w": 186,
+   "h": 167,
+   "ax": 93.0,
+   "ay": 165,
+   "area": 6436,
+   "tile": "apple_0",
+   "src": [
+    101,
+    46
+   ]
+  },
+  "autumn_5": {
+   "file": "props/autumn_5.avif",
+   "biome": "autumn",
+   "w": 57,
+   "h": 38,
+   "ax": 28.0,
+   "ay": 35,
+   "area": 3617,
+   "tile": "apple_0",
+   "src": [
+    243,
+    265
+   ]
+  },
+  "autumn_6": {
+   "file": "props/autumn_6.avif",
+   "biome": "autumn",
+   "w": 81,
+   "h": 65,
+   "ax": 52.5,
+   "ay": 63,
+   "area": 3490,
+   "tile": "apple_0",
+   "src": [
+    76,
+    417
+   ]
+  },
+  "autumn_7": {
+   "file": "props/autumn_7.avif",
+   "biome": "autumn",
+   "w": 89,
+   "h": 71,
+   "ax": 48.0,
+   "ay": 69,
+   "area": 2849,
+   "tile": "apple_1",
+   "src": [
+    168,
+    465
+   ]
+  },
+  "autumn_8": {
+   "file": "props/autumn_8.avif",
+   "biome": "autumn",
+   "w": 77,
+   "h": 54,
+   "ax": 48.0,
+   "ay": 51,
+   "area": 2366,
+   "tile": "apple_2",
+   "src": [
+    8,
+    384
+   ]
+  },
+  "autumn_9": {
+   "file": "props/autumn_9.avif",
+   "biome": "autumn",
+   "w": 58,
+   "h": 63,
+   "ax": 20.0,
+   "ay": 59,
+   "area": 2357,
+   "tile": "apple_1",
+   "src": [
+    375,
+    391
+   ]
+  },
+  "autumn_10": {
+   "file": "props/autumn_10.avif",
+   "biome": "autumn",
+   "w": 57,
+   "h": 56,
+   "ax": 32.0,
+   "ay": 53,
+   "area": 1697,
+   "tile": "apple_0",
+   "src": [
+    17,
+    383
+   ]
+  },
+  "autumn_11": {
+   "file": "props/autumn_11.avif",
+   "biome": "autumn",
+   "w": 47,
+   "h": 37,
+   "ax": 18.0,
+   "ay": 35,
+   "area": 1328,
+   "tile": "apple_1",
+   "src": [
+    6,
+    227
+   ]
+  },
+  "autumn_12": {
+   "file": "props/autumn_12.avif",
+   "biome": "autumn",
+   "w": 57,
+   "h": 44,
+   "ax": 36.0,
+   "ay": 40,
+   "area": 1319,
+   "tile": "apple_0",
+   "src": [
+    279,
+    59
+   ]
+  },
+  "autumn_13": {
+   "file": "props/autumn_13.avif",
+   "biome": "autumn",
+   "w": 49,
+   "h": 43,
+   "ax": 25.0,
+   "ay": 40,
+   "area": 1128,
+   "tile": "apple_2",
+   "src": [
+    247,
+    504
+   ]
+  },
+  "autumn_14": {
+   "file": "props/autumn_14.avif",
+   "biome": "autumn",
+   "w": 40,
+   "h": 26,
+   "ax": 21.0,
+   "ay": 22,
+   "area": 931,
+   "tile": "apple_0",
+   "src": [
+    341,
+    455
+   ]
+  },
+  "autumn_15": {
+   "file": "props/autumn_15.avif",
+   "biome": "autumn",
+   "w": 24,
+   "h": 24,
+   "ax": 10.0,
+   "ay": 20,
+   "area": 758,
+   "tile": "apple_0",
+   "src": [
+    425,
+    218
+   ]
+  },
+  "autumn_16": {
+   "file": "props/autumn_16.avif",
+   "biome": "autumn",
+   "w": 29,
+   "h": 24,
+   "ax": 12.0,
+   "ay": 20,
+   "area": 709,
+   "tile": "apple_0",
+   "src": [
+    407,
+    373
+   ]
+  },
+  "moor_0": {
+   "file": "props/moor_0.avif",
+   "biome": "moor",
+   "w": 94,
+   "h": 71,
+   "ax": 53.0,
+   "ay": 67,
+   "area": 5097,
+   "tile": "wool_0",
+   "src": [
+    115,
+    107
+   ]
+  },
+  "moor_1": {
+   "file": "props/moor_1.avif",
+   "biome": "moor",
+   "w": 102,
+   "h": 66,
+   "ax": 39.0,
+   "ay": 62,
+   "area": 3964,
+   "tile": "wool_1",
+   "src": [
+    149,
+    463
+   ]
+  },
+  "moor_2": {
+   "file": "props/moor_2.avif",
+   "biome": "moor",
+   "w": 98,
+   "h": 68,
+   "ax": 29.0,
+   "ay": 66,
+   "area": 2768,
+   "tile": "wool_1",
+   "src": [
+    104,
+    62
+   ]
+  },
+  "moor_3": {
+   "file": "props/moor_3.avif",
+   "biome": "moor",
+   "w": 64,
+   "h": 57,
+   "ax": 35.0,
+   "ay": 53,
+   "area": 2012,
+   "tile": "wool_0",
+   "src": [
+    286,
+    49
+   ]
+  },
+  "moor_4": {
+   "file": "props/moor_4.avif",
+   "biome": "moor",
+   "w": 47,
+   "h": 38,
+   "ax": 21.0,
+   "ay": 35,
+   "area": 1523,
+   "tile": "wool_2",
+   "src": [
+    268,
+    461
+   ]
+  },
+  "moor_5": {
+   "file": "props/moor_5.avif",
+   "biome": "moor",
+   "w": 52,
+   "h": 47,
+   "ax": 24.0,
+   "ay": 43,
+   "area": 1401,
+   "tile": "wool_0",
+   "src": [
+    406,
+    284
+   ]
+  },
+  "moor_6": {
+   "file": "props/moor_6.avif",
+   "biome": "moor",
+   "w": 66,
+   "h": 45,
+   "ax": 30.0,
+   "ay": 41,
+   "area": 1378,
+   "tile": "wool_0",
+   "src": [
+    340,
+    387
+   ]
+  },
+  "moor_7": {
+   "file": "props/moor_7.avif",
+   "biome": "moor",
+   "w": 39,
+   "h": 37,
+   "ax": 19.0,
+   "ay": 33,
+   "area": 1306,
+   "tile": "wool_0",
+   "src": [
+    373,
+    163
+   ]
+  },
+  "moor_8": {
+   "file": "props/moor_8.avif",
+   "biome": "moor",
+   "w": 46,
+   "h": 31,
+   "ax": 17.0,
+   "ay": 27,
+   "area": 1147,
+   "tile": "wool_0",
+   "src": [
+    330,
+    327
+   ]
+  },
+  "moor_9": {
+   "file": "props/moor_9.avif",
+   "biome": "moor",
+   "w": 35,
+   "h": 33,
+   "ax": 13.0,
+   "ay": 29,
+   "area": 1018,
+   "tile": "wool_1",
+   "src": [
+    439,
+    161
+   ]
+  },
+  "moor_10": {
+   "file": "props/moor_10.avif",
+   "biome": "moor",
+   "w": 33,
+   "h": 45,
+   "ax": 16.0,
+   "ay": 41,
+   "area": 1004,
+   "tile": "wool_1",
+   "src": [
+    346,
+    107
+   ]
+  },
+  "moor_11": {
+   "file": "props/moor_11.avif",
+   "biome": "moor",
+   "w": 52,
+   "h": 29,
+   "ax": 22.0,
+   "ay": 25,
+   "area": 777,
+   "tile": "wool_1",
+   "src": [
+    9,
+    396
+   ]
+  },
+  "moor_12": {
+   "file": "props/moor_12.avif",
+   "biome": "moor",
+   "w": 50,
+   "h": 29,
+   "ax": 35.0,
+   "ay": 25,
+   "area": 761,
+   "tile": "wool_0",
+   "src": [
+    36,
+    226
+   ]
+  },
+  "moor_13": {
+   "file": "props/moor_13.avif",
+   "biome": "moor",
+   "w": 65,
+   "h": 35,
+   "ax": 22.0,
+   "ay": 31,
+   "area": 755,
+   "tile": "wool_0",
+   "src": [
+    251,
+    387
+   ]
+  },
+  "moor_14": {
+   "file": "props/moor_14.avif",
+   "biome": "moor",
+   "w": 35,
+   "h": 23,
+   "ax": 15.0,
+   "ay": 19,
+   "area": 726,
+   "tile": "wool_2",
+   "src": [
+    196,
+    466
+   ]
+  },
+  "moor_15": {
+   "file": "props/moor_15.avif",
+   "biome": "moor",
+   "w": 45,
+   "h": 25,
+   "ax": 18.0,
+   "ay": 21,
+   "area": 723,
+   "tile": "wool_2",
+   "src": [
+    13,
+    398
+   ]
+  },
+  "moor_16": {
+   "file": "props/moor_16.avif",
+   "biome": "moor",
+   "w": 27,
+   "h": 21,
+   "ax": 14.0,
+   "ay": 18,
+   "area": 709,
+   "tile": "wool_0",
+   "src": [
+    416,
+    135
+   ]
+  },
+  "moor_17": {
+   "file": "props/moor_17.avif",
+   "biome": "moor",
+   "w": 26,
+   "h": 22,
+   "ax": 9.5,
+   "ay": 18,
+   "area": 640,
+   "tile": "wool_2",
+   "src": [
+    365,
+    446
+   ]
+  },
+  "jungle_0": {
+   "file": "props/jungle_0.avif",
+   "biome": "jungle",
+   "w": 52,
+   "h": 50,
+   "ax": 31.0,
+   "ay": 46,
+   "area": 1444,
+   "tile": "spice_0",
+   "src": [
+    11,
+    266
+   ]
+  }
+ },
+ "ground": {
+  "meadow": [
+   [
+    0.4556,
+    [
+     6,
+     194,
+     237
+    ]
+   ],
+   [
+    0.2299,
+    [
+     164,
+     200,
+     44
+    ]
+   ],
+   [
+    0.1952,
+    [
+     245,
+     223,
+     162
+    ]
+   ],
+   [
+    0.08775,
+    [
+     216,
+     246,
+     250
+    ]
+   ],
+   [
+    0.03155,
+    [
+     94,
+     134,
+     96
+    ]
+   ]
+  ],
+  "autumn": [
+   [
+    0.583775,
+    [
+     250,
+     192,
+     48
+    ]
+   ],
+   [
+    0.18725,
+    [
+     217,
+     147,
+     22
+    ]
+   ],
+   [
+    0.142475,
+    [
+     219,
+     84,
+     18
+    ]
+   ],
+   [
+    0.055625,
+    [
+     199,
+     190,
+     182
+    ]
+   ],
+   [
+    0.030875,
+    [
+     135,
+     126,
+     120
+    ]
+   ]
+  ],
+  "moor": [
+   [
+    0.3178,
+    [
+     197,
+     169,
+     80
+    ]
+   ],
+   [
+    0.289675,
+    [
+     223,
+     188,
+     95
+    ]
+   ],
+   [
+    0.166975,
+    [
+     158,
+     100,
+     139
+    ]
+   ],
+   [
+    0.15735,
+    [
+     126,
+     97,
+     105
+    ]
+   ],
+   [
+    0.0682,
+    [
+     203,
+     178,
+     172
+    ]
+   ]
+  ],
+  "jungle": [
+   [
+    0.437075,
+    [
+     168,
+     196,
+     34
+    ]
+   ],
+   [
+    0.35865,
+    [
+     199,
+     97,
+     34
+    ]
+   ],
+   [
+    0.11135,
+    [
+     91,
+     156,
+     23
+    ]
+   ],
+   [
+    0.053425,
+    [
+     188,
+     182,
+     158
+    ]
+   ],
+   [
+    0.0395,
+    [
+     119,
+     120,
+     117
+    ]
+   ]
+  ]
+ }
+}
